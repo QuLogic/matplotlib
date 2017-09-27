@@ -739,8 +739,11 @@ def _get_data_path():
 
     _file = _decode_filesystem_path(__file__)
     path = os.sep.join([os.path.dirname(_file), 'mpl-data'])
+    path = '/usr/share/matplotlib/mpl-data'
     if os.path.isdir(path):
         return path
+
+    raise RuntimeError('Could not find the matplotlib data files')
 
     # setuptools' namespace_packages may highjack this init file
     # so need to try something known to be in matplotlib, not basemap
@@ -822,8 +825,7 @@ def matplotlib_fname():
 
          - `$HOME/.matplotlib/matplotlibrc` if `$HOME` is defined.
 
-    - Lastly, it looks in `$MATPLOTLIBDATA/matplotlibrc` for a
-      system-defined copy.
+    - Lastly, it looks in `/etc/matplotlibrc` for a system-defined copy.
     """
 
     def gen_candidates():
@@ -836,7 +838,7 @@ def matplotlib_fname():
             yield matplotlibrc
             yield os.path.join(matplotlibrc, 'matplotlibrc')
         yield os.path.join(_get_configdir(), 'matplotlibrc')
-        yield os.path.join(get_data_path(), 'matplotlibrc')
+        yield '/etc/matplotlibrc'
 
     for fname in gen_candidates():
         if os.path.exists(fname):

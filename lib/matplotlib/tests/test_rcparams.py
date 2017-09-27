@@ -424,15 +424,25 @@ def test_rcparams_reset_after_fail():
         assert mpl.rcParams['text.usetex'] is False
 
 
-def test_if_rctemplate_is_up_to_date():
+@pytest.fixture
+def mplrc():
+    # This is the Fedora-specific location ...
+    if 'MATPLOTLIBDATA' in os.environ:
+        # ... in buildroot.
+        return os.path.join(os.environ['MATPLOTLIBDATA'],
+                            '../../../../etc/matplotlibrc')
+    else:
+        # ... on installed systems.
+        return '/etc/matplotlibrc'
+
+
+def test_if_rctemplate_is_up_to_date(mplrc):
     # This tests if the matplotlibrc.template file
     # contains all valid rcParams.
     dep1 = mpl._all_deprecated
     dep2 = mpl._deprecated_set
     deprecated = list(dep1.union(dep2))
-    #print(deprecated)
-    path_to_rc = mpl.matplotlib_fname()
-    with open(path_to_rc, "r") as f:
+    with open(mplrc, "r") as f:
         rclines = f.readlines()
     missing = {}
     for k,v in mpl.defaultParams.items():
@@ -454,11 +464,10 @@ def test_if_rctemplate_is_up_to_date():
                          .format(missing.items()))
 
 
-def test_if_rctemplate_would_be_valid(tmpdir):
+def test_if_rctemplate_would_be_valid(tmpdir, mplrc):
     # This tests if the matplotlibrc.template file would result in a valid
     # rc file if all lines are uncommented.
-    path_to_rc = mpl.matplotlib_fname()
-    with open(path_to_rc, "r") as f:
+    with open(mplrc, "r") as f:
         rclines = f.readlines()
     newlines = []
     for line in rclines:
