@@ -467,7 +467,7 @@ def test_EllipseCollection():
 
 
 @image_comparison(baseline_images=['polycollection_close'],
-                  extensions=['png'], remove_text=True)
+                  extensions=['png'], remove_text=True, tol=0.45)
 def test_polycollection_close():
     from mpl_toolkits.mplot3d import Axes3D
 

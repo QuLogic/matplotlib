@@ -95,7 +95,7 @@ def _colorbar_extension_length(spacing):
 @image_comparison(
         baseline_images=['colorbar_extensions_shape_uniform',
                          'colorbar_extensions_shape_proportional'],
-        extensions=['png'])
+        extensions=['png'], tol=0.16)
 def test_colorbar_extension_shape():
     '''Test rectangular colorbar extensions.'''
     # Create figures for uniform and proportionally spaced colorbars.
@@ -105,7 +105,7 @@ def test_colorbar_extension_shape():
 
 @image_comparison(baseline_images=['colorbar_extensions_uniform',
                                    'colorbar_extensions_proportional'],
-                  extensions=['png'])
+                  extensions=['png'], tol=0.25)
 def test_colorbar_extension_length():
     '''Test variable length colorbar extensions.'''
     # Create figures for uniform and proportionally spaced colorbars.
@@ -119,7 +119,7 @@ def test_colorbar_extension_length():
                                    'cbar_sharing',
                                    ],
                   extensions=['png'], remove_text=True,
-                  savefig_kwarg={'dpi': 40})
+                  savefig_kwarg={'dpi': 40}, tol=0.17)
 def test_colorbar_positioning():
     data = np.arange(1200).reshape(30, 40)
     levels = [0, 200, 400, 600, 800, 1000, 1200]
@@ -173,7 +173,7 @@ def test_colorbar_positioning():
 
 @image_comparison(baseline_images=['cbar_with_subplots_adjust'],
                   extensions=['png'], remove_text=True,
-                  savefig_kwarg={'dpi': 40})
+                  savefig_kwarg={'dpi': 40}, tol=0.17)
 def test_gridspec_make_colorbar():
     plt.figure()
     data = np.arange(1200).reshape(30, 40)
@@ -233,7 +233,8 @@ def test_colorbarbase():
 
 @image_comparison(
     baseline_images=['colorbar_closed_patch'],
-    remove_text=True)
+    remove_text=True,
+    tol=0.22)
 def test_colorbar_closed_patch():
     fig = plt.figure(figsize=(8, 6))
     ax1 = fig.add_axes([0.05, 0.85, 0.9, 0.1])

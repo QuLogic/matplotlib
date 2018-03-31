@@ -296,7 +296,7 @@ def test_constrained_layout12():
     ax.set_xlabel('x-label')
 
 
-@image_comparison(baseline_images=['constrained_layout13'], tol=2.e-2,
+@image_comparison(baseline_images=['constrained_layout13'], tol=3.e-2,
         extensions=['png'])
 def test_constrained_layout13():
     'Test that padding works.'

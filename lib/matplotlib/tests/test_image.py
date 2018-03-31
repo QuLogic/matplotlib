@@ -784,7 +784,7 @@ def test_imshow_endianess():
 
 
 @image_comparison(baseline_images=['imshow_masked_interpolation'],
-                  remove_text=True, style='mpl20')
+                  remove_text=True, style='mpl20', tol=0.25)
 def test_imshow_masked_interpolation():
 
     cm = copy(plt.get_cmap('viridis'))

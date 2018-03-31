@@ -24,7 +24,7 @@ def test_subplot():
 
 
 @image_comparison(baseline_images=['curvelinear3'],
-                  extensions=['png'], style='default', tol=0.01)
+                  extensions=['png'], style='default', tol=0.02)
 def test_curvelinear3():
     fig = plt.figure(figsize=(5, 5))
     fig.clf()
@@ -80,7 +80,7 @@ def test_curvelinear3():
 
 
 @image_comparison(baseline_images=['curvelinear4'],
-                  extensions=['png'], style='default', tol=0.01)
+                  extensions=['png'], style='default', tol=0.05)
 def test_curvelinear4():
     fig = plt.figure(figsize=(5, 5))
     fig.clf()

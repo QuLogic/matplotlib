@@ -225,7 +225,7 @@ def test_text3d():
     ax.set_zlabel('Z axis')
 
 
-@image_comparison(baseline_images=['trisurf3d'], remove_text=True, tol=0.03)
+@image_comparison(baseline_images=['trisurf3d'], remove_text=True, tol=0.05)
 def test_trisurf3d():
     n_angles = 36
     n_radii = 8
@@ -704,7 +704,7 @@ class TestVoxels(object):
     @image_comparison(
         baseline_images=['voxels-xyz'],
         extensions=['png'],
-        tol=0.01
+        tol=0.02
     )
     def test_xyz(self):
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})

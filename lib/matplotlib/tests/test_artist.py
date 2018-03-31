@@ -96,7 +96,8 @@ def test_collection_transform_of_none():
     assert isinstance(c._transOffset, mtransforms.IdentityTransform)
 
 
-@image_comparison(baseline_images=["clip_path_clipping"], remove_text=True)
+@image_comparison(baseline_images=["clip_path_clipping"], remove_text=True,
+                  tol=0.28)
 def test_clipping():
     exterior = mpath.Path.unit_rectangle().deepcopy()
     exterior.vertices *= 4

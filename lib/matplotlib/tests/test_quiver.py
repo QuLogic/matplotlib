@@ -131,7 +131,7 @@ def test_quiver_key_pivot():
 
 
 @image_comparison(baseline_images=['barbs_test_image'],
-                  extensions=['png'], remove_text=True)
+                  extensions=['png'], remove_text=True, tol=0.11)
 def test_barbs():
     x = np.linspace(-5, 5, 5)
     X, Y = np.meshgrid(x, x)
