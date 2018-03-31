@@ -42,7 +42,7 @@ def test_simple():
 
 @image_comparison(baseline_images=['multi_pickle'],
                   extensions=['png'], remove_text=True,
-                  style='mpl20')
+                  style='mpl20', tol=0.004)
 def test_complete():
     fig = plt.figure('Figure with a label?', figsize=(10, 6))
 

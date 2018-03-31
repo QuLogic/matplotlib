@@ -68,7 +68,7 @@ def __prepare_fancyarrow_dpi_cor_test():
 
 
 @image_comparison(baseline_images=['fancyarrow_dpi_cor_100dpi'],
-                  remove_text=True, extensions=['png'],
+                  remove_text=True, extensions=['png'], tol=0.016,
                   savefig_kwarg=dict(dpi=100))
 def test_fancyarrow_dpi_cor_100dpi():
     """
@@ -83,7 +83,7 @@ def test_fancyarrow_dpi_cor_100dpi():
 
 
 @image_comparison(baseline_images=['fancyarrow_dpi_cor_200dpi'],
-                  remove_text=True, extensions=['png'],
+                  remove_text=True, extensions=['png'], tol=0.019,
                   savefig_kwarg=dict(dpi=200))
 def test_fancyarrow_dpi_cor_200dpi():
     """

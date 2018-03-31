@@ -389,7 +389,7 @@ def test_annotate_default_arrow():
     assert ann.arrow_patch is not None
 
 
-@image_comparison(baseline_images=['polar_axes'], style='default')
+@image_comparison(baseline_images=['polar_axes'], style='default', tol=0.01)
 def test_polar_annotations():
     # you can specify the xypoint and the xytext in different
     # positions and coordinate systems, and optionally turn on a
@@ -3284,7 +3284,8 @@ def test_vertex_markers():
 
 
 @image_comparison(baseline_images=['vline_hline_zorder',
-                                   'errorbar_zorder'])
+                                   'errorbar_zorder'],
+                  tol=0.02)
 def test_eb_line_zorder():
     x = list(xrange(10))
 
@@ -5017,7 +5018,7 @@ def test_title_location_roundtrip():
 
 
 @image_comparison(baseline_images=["loglog"], remove_text=True,
-                  extensions=['png'])
+                  extensions=['png'], tol=0.009)
 def test_loglog():
     fig, ax = plt.subplots()
     x = np.arange(1, 11)

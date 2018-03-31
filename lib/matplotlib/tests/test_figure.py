@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 
-@image_comparison(baseline_images=['figure_align_labels'])
+@image_comparison(baseline_images=['figure_align_labels'], tol=0.01)
 def test_align_labels():
     # Check the figure.align_labels() command
     fig = plt.figure(tight_layout=True)

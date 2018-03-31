@@ -91,7 +91,7 @@ def test_custom_transform():
 
 
 @image_comparison(baseline_images=['polar_box'],
-                  extensions=['png'], style='default', tol=0.03)
+                  extensions=['png'], style='default', tol=0.04)
 def test_polar_box():
     fig = plt.figure(figsize=(5, 5))
 

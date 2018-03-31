@@ -48,7 +48,7 @@ def test_colormap():
     plt.colorbar()
 
 
-@image_comparison(baseline_images=['streamplot_linewidth'])
+@image_comparison(baseline_images=['streamplot_linewidth'], tol=0.002)
 def test_linewidth():
     X, Y, U, V = velocity_field()
     speed = np.sqrt(U*U + V*V)

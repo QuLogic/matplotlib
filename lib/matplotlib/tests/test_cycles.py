@@ -10,7 +10,7 @@ from cycler import cycler
 
 
 @image_comparison(baseline_images=['color_cycle_basic'], remove_text=True,
-                  extensions=['png'])
+                  extensions=['png'], tol=0.008)
 def test_colorcycle_basic():
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -28,7 +28,7 @@ def test_colorcycle_basic():
 
 
 @image_comparison(baseline_images=['marker_cycle', 'marker_cycle'],
-                  remove_text=True, extensions=['png'])
+                  remove_text=True, extensions=['png'], tol=0.008)
 def test_marker_cycle():
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -63,7 +63,7 @@ def test_marker_cycle():
 
 
 @image_comparison(baseline_images=['lineprop_cycle_basic'], remove_text=True,
-                  extensions=['png'])
+                  extensions=['png'], tol=0.009)
 def test_linestylecycle_basic():
     fig = plt.figure()
     ax = fig.add_subplot(111)
