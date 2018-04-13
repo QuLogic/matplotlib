@@ -963,10 +963,19 @@ class ConfigureSubplotsTk(backend_tools.ConfigureSubplotsBase):
         self.window = None
 
 
+class HelpTk(backend_tools.ToolHelpBase):
+    def trigger(self, *args):
+        from tkinter.simpledialog import SimpleDialog
+        dialog = SimpleDialog(
+            self.figure.canvas._tkcanvas, self._get_help_text(), ["OK"])
+        dialog.done = lambda num: dialog.frame.master.withdraw()
+
+
 backend_tools.ToolSaveFigure = SaveFigureTk
 backend_tools.ToolConfigureSubplots = ConfigureSubplotsTk
 backend_tools.ToolSetCursor = SetCursorTk
 backend_tools.ToolRubberband = RubberbandTk
+backend_tools.ToolHelp = HelpTk
 Toolbar = ToolbarTk
 
 
