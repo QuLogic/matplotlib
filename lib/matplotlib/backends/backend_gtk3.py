@@ -874,11 +874,40 @@ class HelpGTK3(backend_tools.ToolHelpBase):
         return ''.join(mods) + key
 
     def _show_shortcuts_window(self):
-        section = Gtk.ShortcutsSection()
+        seen_tools = set()
+        all_sections = []
+        for name, grouptools in backend_tools.default_toolbar_tools:
+            section = Gtk.ShortcutsSection(section_name=name,
+                                           title=name.capitalize())
+            all_sections.append(section)
+            group = Gtk.ShortcutsGroup()
+            section.add(group)
+
+            for name in grouptools:
+                try:
+                    tool = self.toolmanager.tools[name]
+                except KeyError:
+                    continue
+
+                shortcut = Gtk.ShortcutsShortcut(
+                    accelerator=' '.join(
+                        self._normalize_shortcut(key)
+                        for key in self.toolmanager.get_tool_keymap(name)
+                        # Will never be sent:
+                        if 'cmd+' not in key),
+                    title=tool.name,
+                    subtitle=tool.description)
+                group.add(shortcut)
+                seen_tools.add(name)
+
+        # Add everything not in a section.
+        section = Gtk.ShortcutsSection(section_name='other', title='Other')
+        all_sections.append(section)
         group = Gtk.ShortcutsGroup()
         section.add(group)
-
         for name, tool in sorted(self.toolmanager.tools.items()):
+            if name in seen_tools:
+                continue
             if not tool.description:
                 continue
 
@@ -896,8 +925,9 @@ class HelpGTK3(backend_tools.ToolHelpBase):
             title='Help',
             modal=True,
             transient_for=self._figure.canvas.get_toplevel())
-        section.show()  # Must be done explicitly before add!
-        window.add(section)
+        all_sections[0].show()  # Must be done explicitly before add!
+        for section in all_sections:
+            window.add(section)
 
         window.show_all()
 
