@@ -875,11 +875,33 @@ class HelpGTK3(backend_tools.ToolHelpBase):
 
     def _show_shortcuts_window(self):
         section = Gtk.ShortcutsSection()
-        group = Gtk.ShortcutsGroup()
-        section.add(group)
 
+        seen_tools = set()
+        for group, grouptools in backend_tools.default_toolbar_tools:
+            group = Gtk.ShortcutsGroup(title=group)
+            section.add(group)
+            for name in grouptools:
+                try:
+                    tool = self.toolmanager.tools[name]
+                except KeyError:
+                    continue
+                shortcut = Gtk.ShortcutsShortcut(
+                    accelerator=' '.join(
+                        self._normalize_shortcut(key)
+                        for key in self.toolmanager.get_tool_keymap(name)
+                        # Will never be sent:
+                        if 'cmd+' not in key),
+                    title=tool.name,
+                    subtitle=tool.description)
+                group.add(shortcut)
+                seen_tools.add(name)
+
+        group = Gtk.ShortcutsGroup(title='other')
+        section.add(group)
         for name, tool in sorted(self.toolmanager.tools.items()):
             if not tool.description:
+                continue
+            if name in seen_tools:
                 continue
 
             shortcut = Gtk.ShortcutsShortcut(
