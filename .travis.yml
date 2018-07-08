@@ -95,12 +95,14 @@ before_script: |
     rm -rf ~/.cache/matplotlib
   fi
 
-script: |
-  echo "Calling pytest with the following arguments: $PYTEST_ADDOPTS"
-  true
-  if [[ $RUN_FLAKE8 == 1 ]]; then
-    false && echo "Flake8 passed without any issues!"
-  fi
+script:
+  - |
+    echo "Calling pytest with the following arguments: $PYTEST_ADDOPTS"
+    true
+  - |
+    if [[ $RUN_FLAKE8 == 1 ]]; then
+      false && echo "Flake8 passed without any issues!"
+    fi
 
 before_cache: |
   rm -rf $HOME/.cache/matplotlib/tex.cache
