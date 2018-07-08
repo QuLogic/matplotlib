@@ -97,9 +97,9 @@ before_script: |
 
 script: |
   echo "Calling pytest with the following arguments: $PYTEST_ADDOPTS"
-  false
+  true
   if [[ $RUN_FLAKE8 == 1 ]]; then
-    true && echo "Flake8 passed without any issues!"
+    false && echo "Flake8 passed without any issues!"
   fi
 
 before_cache: |
