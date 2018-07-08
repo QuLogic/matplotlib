@@ -13,34 +13,6 @@ cache:
     - $HOME/.ccache  # https://github.com/travis-ci/travis-ci/issues/5853
     - $HOME/.cache/matplotlib
 
-addons:
-  artifacts:
-    paths:
-    - result_images.tar.bz2
-  apt:
-    sources:
-      - sourceline: ppa:jonathonf/ffmpeg-3
-    packages:
-      - cm-super
-      - dvipng
-      - ffmpeg
-      - gdb
-      - gir1.2-gtk-3.0
-      - graphviz
-      - inkscape
-      - libcairo2
-      - libgeos-dev
-      - libgirepository-1.0.1
-      - lmodern
-      - otf-freefont
-      - pgf
-      - texlive-fonts-recommended
-      - texlive-latex-base
-      - texlive-latex-extra
-      - texlive-latex-recommended
-      - texlive-xetex
-      - texlive-luatex
-
 env:
   global:
     - ARTIFACTS_AWS_REGION=us-east-1
