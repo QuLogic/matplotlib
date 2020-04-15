@@ -18,7 +18,6 @@ import matplotlib as mpl
 from . import _path, cbook
 from .cbook import _to_unmasked_float_array, simple_linear_interpolation
 
-
 class Path:
     """
     A series of possibly disconnected, possibly closed, line and curve
