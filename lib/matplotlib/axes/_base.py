@@ -23,6 +23,7 @@ import matplotlib.ticker as mticker
 import matplotlib.axis as maxis
 import matplotlib.spines as mspines
 import matplotlib.font_manager as font_manager
+import matplotlib.table as mtable
 import matplotlib.text as mtext
 import matplotlib.image as mimage
 import matplotlib.path as mpath
@@ -1167,7 +1168,6 @@ class _AxesBase(martist.Artist):
 
         self._gridOn = mpl.rcParams['axes.grid']
         self._children = []
-        self.tables = []
         self.artists = []
         self.images = []
         self._mouseover_set = _OrderedSet()
@@ -1250,6 +1250,10 @@ class _AxesBase(martist.Artist):
     def patches(self):
         return tuple(a for a in self._children
                      if isinstance(a, mpatches.Patch))
+
+    @property
+    def tables(self):
+        return tuple(a for a in self._children if isinstance(a, mtable.Table))
 
     @property
     def texts(self):
@@ -2154,12 +2158,12 @@ class _AxesBase(martist.Artist):
 
     def add_table(self, tab):
         """
-        Add a `~.Table` to the axes' tables; return the table.
+        Add a `~.Table` to the Axes; return the table.
         """
         self._set_artist_props(tab)
-        self.tables.append(tab)
+        self._children.append(tab)
         tab.set_clip_path(self.patch)
-        tab._remove_method = self.tables.remove
+        tab._remove_method = self._children.remove
         return tab
 
     def add_container(self, container):
@@ -4278,7 +4282,6 @@ class _AxesBase(martist.Artist):
             *self.spines.values(),
             *self._get_axis_list(),
             self.title, self._left_title, self._right_title,
-            *self.tables,
             *self.images,
             *self.child_axes,
             *([self.legend_] if self.legend_ is not None else []),
