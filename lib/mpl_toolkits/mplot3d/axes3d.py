@@ -2096,7 +2096,7 @@ class Axes3D(Axes):
             self.add_collection3d(polycol)
 
         for col in colls:
-            self.collections.remove(col)
+            col.remove()
 
     def add_contour_set(
             self, cset, extend3d=False, stride=5, zdir='z', offset=None):
