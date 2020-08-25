@@ -1168,7 +1168,6 @@ class _AxesBase(martist.Artist):
 
         self._gridOn = mpl.rcParams['axes.grid']
         self._children = []
-        self.artists = []
         self._mouseover_set = _OrderedSet()
         self.child_axes = []
         self._current_image = None  # strictly for pyplot via _sci, _gci
@@ -1239,6 +1238,14 @@ class _AxesBase(martist.Artist):
             self.patch.set_visible(patch_visible)
 
         self.stale = True
+
+    @property
+    def artists(self):
+        return tuple(
+            a for a in self._children
+            if not isinstance(a, (
+                mcoll.Collection, mimage.AxesImage, mlines.Line2D,
+                mpatches.Patch, mtable.Table, mtext.Text)))
 
     @property
     def collections(self):
@@ -1970,7 +1977,7 @@ class _AxesBase(martist.Artist):
 
     def add_artist(self, a):
         """
-        Add an `~.Artist` to the axes, and return the artist.
+        Add an `~.Artist` to the Axes; return the artist.
 
         Use `add_artist` only for artists for which there is no dedicated
         "add" method; and if necessary, use a method such as `update_datalim`
@@ -1982,8 +1989,8 @@ class _AxesBase(martist.Artist):
         ``ax.transData``.
         """
         a.axes = self
-        self.artists.append(a)
-        a._remove_method = self.artists.remove
+        self._children.append(a)
+        a._remove_method = self._children.remove
         self._set_artist_props(a)
         a.set_clip_path(self.patch)
         self.stale = True
@@ -4284,7 +4291,6 @@ class _AxesBase(martist.Artist):
         # docstring inherited.
         return [
             *self._children,
-            *self.artists,
             *self.spines.values(),
             *self._get_axis_list(),
             self.title, self._left_title, self._right_title,
