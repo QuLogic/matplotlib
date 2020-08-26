@@ -6920,3 +6920,77 @@ def test_patch_bounds():  # PR 19078
     bot = 1.9*np.sin(15*np.pi/180)**2
     np.testing.assert_array_almost_equal_nulp(
         np.array((-0.525, -(bot+0.05), 1.05, bot+0.1)), ax.dataLim.bounds, 16)
+
+
+def test_artist_sublists():
+    fig, ax = plt.subplots()
+    lines = [ax.plot(np.arange(i, i + 5))[0] for i in range(6)]
+    col = ax.scatter(np.arange(5), np.arange(5))
+    im = ax.imshow(np.zeros((5, 5)))
+    patch = ax.add_patch(mpatches.Rectangle((0, 0), 5, 5))
+    text = ax.text(0, 0, 'foo')
+
+    # Get items, which should not be mixed.
+    assert list(ax.collections) == [col]
+    assert list(ax.images) == [im]
+    assert list(ax.lines) == lines
+    assert list(ax.patches) == [patch]
+    assert not ax.tables
+    assert list(ax.texts) == [text]
+
+    # Get items should work like lists/tuple.
+    assert ax.lines[0] == lines[0]
+    assert ax.lines[-1] == lines[-1]
+    with pytest.raises(IndexError, match='out of range'):
+        ax.lines[len(lines) + 1]
+
+    # Deleting items (multiple or single) should warn.
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        del ax.lines[-1]
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        del ax.lines[-1:]
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        del ax.lines[1:]
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        del ax.lines[0]
+
+    col.remove()
+    im.remove()
+    patch.remove()
+    text.remove()
+
+    # Everything should be empty now.
+    assert not ax.collections
+    assert not ax.images
+    assert not ax.lines
+    assert not ax.patches
+    assert not ax.tables
+    assert not ax.texts
+
+    # Adding items should warn.
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        ax.lines.append(lines[-2])
+    assert list(ax.lines) == [lines[-2]]
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        ax.lines.append(lines[-1])
+    assert list(ax.lines) == lines[-2:]
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        ax.lines.insert(-2, lines[0])
+    assert list(ax.lines) == [lines[0], lines[-2], lines[-1]]
+
+    # Modifying items should warn.
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        ax.lines[0] = lines[0]
+    assert list(ax.lines) == [lines[0], lines[-2], lines[-1]]
+    with pytest.warns(MatplotlibDeprecationWarning,
+                      match='modification of the Axes.lines property'):
+        ax.lines[1:1] = lines[1:-2]
+    assert list(ax.lines) == lines
