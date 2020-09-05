@@ -2999,10 +2999,6 @@ pivot='tail', normalize=False, **kwargs)
             Used to avoid overlapping error bars when two series share x-axis
             values.
 
-        arrow_length_ratio : float, default: 0.4
-            Passed to :meth:`quiver`, the ratio of the arrow head with respect
-            to the quiver.
-
         Returns
         -------
         errlines : list
@@ -3143,14 +3139,8 @@ pivot='tail', normalize=False, **kwargs)
             else:
                 low_err, high_err = err, err
 
-            # for compatibility with the 2d errorbar function, when both upper
-            # and lower limits specified, we need to draw the markers / line
-            common_mask = (lomask == himask) & everymask
-            _lomask = lomask | common_mask
-            _himask = himask | common_mask
-
-            lows = np.where(_lomask, data - low_err, data)
-            highs = np.where(_himask, data + high_err, data)
+            lows = np.where(lomask | ~everymask, data, data - low_err)
+            highs = np.where(himask | ~everymask, data, data + high_err)
 
             return lows, highs
 
@@ -3185,18 +3175,16 @@ pivot='tail', normalize=False, **kwargs)
             lolims = np.broadcast_to(lolims, len(data)).astype(bool)
             uplims = np.broadcast_to(uplims, len(data)).astype(bool)
 
-            nolims = ~(lolims | uplims)
-
             # a nested list structure that expands to (xl,xh),(yl,yh),(zl,zh),
             # where x/y/z and l/h correspond to dimensions and low/high
             # positions of errorbars in a dimension we're looping over
             coorderr = [
-                _extract_errs(err * dir_vector[i], coord,
-                              ~lolims & everymask, ~uplims & everymask)
+                _extract_errs(err * dir_vector[i], coord, lolims, uplims)
                 for i, coord in enumerate([x, y, z])]
             (xl, xh), (yl, yh), (zl, zh) = coorderr
 
             # draws capmarkers - flat caps orthogonal to the error bars
+            nolims = ~(lolims | uplims)
             if nolims.any() and capsize > 0:
                 lo_caps_xyz = _apply_mask([xl, yl, zl], nolims & everymask)
                 hi_caps_xyz = _apply_mask([xh, yh, zh], nolims & everymask)
@@ -3214,24 +3202,18 @@ pivot='tail', normalize=False, **kwargs)
                 caplines.append(cap_lo)
                 caplines.append(cap_hi)
 
-            if (lolims | uplims).any():
-                limits = [
-                    _extract_errs(err*dir_vector[i], coord, uplims, lolims)
-                    for i, coord in enumerate([x, y, z])]
-
-                (xlo, xup), (ylo, yup), (zlo, zup) = limits
-                lomask = lolims & everymask
-                upmask = uplims & everymask
-                lolims_xyz = np.array(_apply_mask([xlo, ylo, zlo], upmask))
-                uplims_xyz = np.array(_apply_mask([xup, yup, zup], lomask))
-                lo_xyz = np.array(_apply_mask([x, y, z], upmask))
-                up_xyz = np.array(_apply_mask([x, y, z], lomask))
-                x0, y0, z0 = np.concatenate([lo_xyz, up_xyz], axis=-1)
-                dx, dy, dz = np.concatenate([lolims_xyz - lo_xyz,
-                                             uplims_xyz - up_xyz], axis=-1)
-                self.quiver(x0, y0, z0, dx, dy, dz,
-                            arrow_length_ratio=arrow_length_ratio,
-                            **eb_lines_style)
+            if lolims.any():
+                xh0, yh0, zh0 = _apply_mask([xh, yh, zh], lolims & everymask)
+                self.quiver(xh0, yh0, zh0, *dir_vector,
+                            length=eb_cap_style.get('markersize', 0) / 30,
+                            arrow_length_ratio=1,
+                            **eb_cap_style)
+            if uplims.any():
+                xl0, yl0, zl0 = _apply_mask([xl, yl, zl], uplims & everymask)
+                self.quiver(xl0, yl0, zl0, *-dir_vector,
+                            length=eb_cap_style.get('markersize', 0) / 30,
+                            arrow_length_ratio=1,
+                            **eb_cap_style)
 
             errline = art3d.Line3DCollection(np.array(coorderr).T,
                                              **eb_lines_style)

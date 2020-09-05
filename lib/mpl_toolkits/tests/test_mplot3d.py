@@ -1104,7 +1104,7 @@ def test_errorbar3d_errorevery():
     zlolims = (i % estep == 0) & (i // estep % 3 == 2)
 
     ax.errorbar(x, y, z, 0.2, zuplims=zuplims, zlolims=zlolims,
-                errorevery=estep)
+                errorevery=estep, capsize=1)
 
 
 @mpl3d_image_comparison(['errorbar3d.png'])
