@@ -10,6 +10,7 @@ import tkinter.filedialog
 import tkinter.messagebox
 
 import numpy as np
+from PIL import Image, ImageTk
 
 import matplotlib as mpl
 from matplotlib import _api, backend_tools, cbook, _c_internal_utils
@@ -570,14 +571,8 @@ class NavigationToolbar2Tk(NavigationToolbar2, tk.Frame):
             pass
 
     def _Button(self, text, image_file, toggle, command):
-        if tk.TkVersion >= 8.6:
-            PhotoImage = tk.PhotoImage
-        else:
-            from PIL.ImageTk import PhotoImage
-        image = (PhotoImage(master=self, file=image_file)
-                 if image_file is not None else None)
         if not toggle:
-            b = tk.Button(master=self, text=text, image=image, command=command)
+            b = tk.Button(master=self, text=text, command=command)
         else:
             # There is a bug in tkinter included in some python 3.6 versions
             # that without this variable, produces a "visual" toggling of
@@ -586,18 +581,25 @@ class NavigationToolbar2Tk(NavigationToolbar2, tk.Frame):
             # https://bugs.python.org/issue25684
             var = tk.IntVar(master=self)
             b = tk.Checkbutton(
-                master=self, text=text, image=image, command=command,
+                master=self, text=text, command=command,
                 indicatoron=False, variable=var)
             b.var = var
-        b._ntimage = image
+        if image_file is not None:
+            size = b.winfo_pixels('24p')
+            with Image.open(image_file.replace('.png', '_large.png')
+                            if size > 24 else image_file) as im:
+                image = ImageTk.PhotoImage(im.resize((size, size)),
+                                           master=self)
+            b.config(image=image, height='24p', width='24p')
+            b._ntimage = image  # Prevent garbage collection.
         b.pack(side=tk.LEFT)
         return b
 
     def _Spacer(self):
-        # Buttons are 30px high. Make this 26px tall +2px padding to center it.
-        s = tk.Frame(
-            master=self, height=26, relief=tk.RIDGE, pady=2, bg="DarkGray")
-        s.pack(side=tk.LEFT, padx=5)
+        # Buttons are 24pt high. Make this 22pt tall +1pt padding to center it.
+        s = tk.Frame(master=self, height='22p', pady='1p',
+                     relief=tk.RIDGE, bg='DarkGray')
+        s.pack(side=tk.LEFT, padx='4p')
         return s
 
     def save_figure(self, *args):
