@@ -165,8 +165,7 @@ class FigureCanvasTk(FigureCanvasBase):
         alternative="get_tk_widget().bind('<Configure>', ..., True)")
     def __init__(self, figure, master=None, resize_callback=None):
         super().__init__(figure)
-        self._idle = True
-        self._idle_callback = None
+        self._idle_draw_id = None
         w, h = self.figure.bbox.size.astype(int)
         self._tkcanvas = tk.Canvas(
             master=master, background="white",
@@ -230,18 +229,16 @@ class FigureCanvasTk(FigureCanvasBase):
 
     def draw_idle(self):
         # docstring inherited
-        if not self._idle:
+        if self._idle_draw_id:
             return
-
-        self._idle = False
 
         def idle_draw(*args):
             try:
                 self.draw()
             finally:
-                self._idle = True
+                self._idle_draw_id = None
 
-        self._idle_callback = self._tkcanvas.after_idle(idle_draw)
+        self._idle_draw_id = self._tkcanvas.after_idle(idle_draw)
 
     def get_tk_widget(self):
         """
@@ -449,8 +446,8 @@ class FigureManagerTk(FigureManagerBase):
             self._shown = True
 
     def destroy(self, *args):
-        if self.canvas._idle_callback:
-            self.canvas._tkcanvas.after_cancel(self.canvas._idle_callback)
+        if self.canvas._idle_draw_id:
+            self.canvas._tkcanvas.after_cancel(self.canvas._idle_draw_id)
 
         # NOTE: events need to be flushed before issuing destroy (GH #9956),
         # however, self.window.update() can break user code. This is the
