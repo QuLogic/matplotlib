@@ -205,6 +205,9 @@ static PyModuleDef _tkagg_module = {
 
 PyMODINIT_FUNC PyInit__tkagg(void)
 {
+#ifdef WIN32_DLL
+    SetProcessDPIAware(); // Ignore errors in case we are embedded.
+#endif
     load_tkinter_funcs();
     if (PyErr_Occurred()) {
         return NULL;

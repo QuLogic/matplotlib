@@ -411,8 +411,8 @@ class Matplotlib(SetupPackage):
             ],
             include_dirs=["src"],
             # psapi library needed for finding Tcl/Tk at run time.
-            libraries=({"linux": ["dl"], "win32": ["psapi"],
-                        "cygwin": ["psapi"]}.get(sys.platform, [])),
+            libraries=({"linux": ["dl"], "win32": ["psapi", "user32"],
+                        "cygwin": ["psapi", "user32"]}.get(sys.platform, [])),
             extra_link_args={"win32": ["-mwindows"]}.get(sys.platform, []))
         add_numpy_flags(ext)
         add_libagg_flags(ext)
