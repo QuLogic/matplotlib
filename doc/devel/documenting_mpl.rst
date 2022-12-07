@@ -110,7 +110,7 @@ for opening them in your default browser is:
 
    make show
 
-.. _writing-rest-pages:
+.. _writing-rst-pages:
 
 Writing ReST pages
 ==================
