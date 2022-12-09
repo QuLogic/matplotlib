@@ -100,6 +100,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
+
+mpl.checkdep_usetex('')
+
 # Make some illustrative fake data:
 
 x = np.arange(0, np.pi, 0.1)
