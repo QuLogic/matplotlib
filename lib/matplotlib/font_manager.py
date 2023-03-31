@@ -458,7 +458,7 @@ def ttfFontProperty(font):
     return FontEntry(font.fname, name, style, variant, weight, stretch, size)
 
 
-def afmFontProperty(fontpath, font):
+def afmFontProperty(fontpath, font, foo=1, bar=2):
     """
     Extract information from an AFM font file.
 
