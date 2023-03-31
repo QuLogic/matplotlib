@@ -143,6 +143,10 @@ class _ColorbarSpine(mspines.Spine):
         return ret
 
 
+def a_new_function(x, y, z):
+    print(x, y, z)
+
+
 class _ColorbarAxesLocator:
     """
     Shrink the axes if there are triangular or rectangular extends.
