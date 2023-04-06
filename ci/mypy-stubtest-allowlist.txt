@@ -1,3 +1,5 @@
+matplotlib.axes.*Axes.get_title
+
 # Non-typed (and private) modules/functions
 matplotlib.backends.*
 matplotlib.tests.*
