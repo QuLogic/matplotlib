@@ -44,8 +44,11 @@ jobs:
               reviewdog \
                 -efm '%Eerror: %m' \
                 -efm '%CStub: in file %f:%l' \
+                -efm '%CStub: in file %f' \
                 -efm '%+CRuntime:%.%#' \
+                -efm '%+CMISSING' \
                 -efm '%+Cdef %.%#' \
+                -efm '%+C<%.%#>' \
                 -efm '%Z' \
                 -reporter=github-check -tee -name=mypy-stubtest \
                 -filter-mode=nofilter
