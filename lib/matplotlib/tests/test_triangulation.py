@@ -1189,35 +1189,40 @@ def test_internal_cpp_api():
     with pytest.raises(
             TypeError,
             match=r'__init__\(\): incompatible constructor arguments.'):
-        mpl._tri.Triangulation()
+        mpl._tri.Triangulation()  # type: ignore[call-arg]
 
     with pytest.raises(
             ValueError, match=r'x and y must be 1D arrays of the same length'):
-        mpl._tri.Triangulation([], [1], [[]], (), (), (), False)
+        mpl._tri.Triangulation([], [1], [[]], (), (), (),
+                               False)  # type: ignore[arg-type]
 
     x = [0, 1, 1]
     y = [0, 0, 1]
     with pytest.raises(
             ValueError,
             match=r'triangles must be a 2D array of shape \(\?,3\)'):
-        mpl._tri.Triangulation(x, y, [[0, 1]], (), (), (), False)
+        mpl._tri.Triangulation(x, y, [[0, 1]], (), (), (),
+                               False)  # type: ignore[arg-type]
 
     tris = [[0, 1, 2]]
     with pytest.raises(
             ValueError,
             match=r'mask must be a 1D array with the same length as the '
                   r'triangles array'):
-        mpl._tri.Triangulation(x, y, tris, [0, 1], (), (), False)
+        mpl._tri.Triangulation(x, y, tris, [0, 1], (), (),
+                               False)  # type: ignore[arg-type]
 
     with pytest.raises(
             ValueError, match=r'edges must be a 2D array with shape \(\?,2\)'):
-        mpl._tri.Triangulation(x, y, tris, (), [[1]], (), False)
+        mpl._tri.Triangulation(x, y, tris, (), [[1]], (),
+                               False)  # type: ignore[arg-type]
 
     with pytest.raises(
             ValueError,
             match=r'neighbors must be a 2D array with the same shape as the '
                   r'triangles array'):
-        mpl._tri.Triangulation(x, y, tris, (), (), [[-1]], False)
+        mpl._tri.Triangulation(x, y, tris, (), (), [[-1]],
+                               False)  # type: ignore[arg-type]
 
     triang = mpl._tri.Triangulation(x, y, tris, (), (), (), False)
 
