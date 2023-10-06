@@ -85,9 +85,8 @@ jobs:
       - uses: cygwin/cygwin-install-action@v4
         with:
           packages: >-
-            ccache gcc-g++ gdb git graphviz libcairo-devel libffi-devel
-            libgeos-devel libQt5Core-devel pkgconf libglib2.0-devel ninja
-            noto-cjk-fonts
+            ccache ffmpeg gcc-g++ git libgirepository1.0-devel libglib2.0-devel
+            libQt5Core-devel ninja noto-cjk-fonts pkgconf
             python3${{ matrix.python-minor-version }}-devel
             python3${{ matrix.python-minor-version }}-pip
             python3${{ matrix.python-minor-version }}-wheel
@@ -102,16 +101,12 @@ jobs:
             python3${{ matrix.python-minor-version }}-pyparsing
             python3${{ matrix.python-minor-version }}-sip
             python3${{ matrix.python-minor-version }}-sphinx
+            python3${{ matrix.python-minor-version }}-tkinter
             python-cairo-devel
             python3${{ matrix.python-minor-version }}-cairo
             python3${{ matrix.python-minor-version }}-gi
             python3${{ matrix.python-minor-version }}-matplotlib
-            xorg-server-extra libxcb-icccm4 libxcb-image0
-            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0
-            libxcb-xinerama0
-            make autoconf autoconf2.5 automake automake1.10 libtool m4
-            libqhull-devel libfreetype-devel
-            libjpeg-devel libwebp-devel
+            xorg-server-extra
 
       - name: Set runner username to root and id to 0
         shell: bash.exe -eo pipefail -o igncr "{0}"
@@ -174,25 +169,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install kiwisolver 'numpy>=1.22,<1.26' pillow importlib_resources
-          grep -v -F -e psutil requirements/testing/all.txt >requirements_test.txt
           python -m pip install meson-python pybind11
           export PATH="/usr/local/bin:$PATH"
           python -m pip install --no-build-isolation 'contourpy>=1.0.1'
-          python -m pip install --upgrade cycler fonttools \
-              packaging pyparsing python-dateutil setuptools-scm \
-              -r requirements_test.txt sphinx ipython
-          python -m pip install --upgrade pycairo 'cairocffi>=0.8' PyGObject &&
+          python -m pip install --upgrade -r requirements/testing/all.txt \
+              cycler fonttools packaging pyparsing python-dateutil setuptools-scm sphinx ipython
+          python -m pip install --upgrade pycairo 'cairocffi>=0.8' 'PyGObject<3.40.0' &&
              python -c 'import gi; gi.require_version("Gtk", "3.0"); from gi.repository import Gtk' &&
              echo 'PyGObject is available' ||
              echo 'PyGObject is not available'
+          ln -s /usr/bin/qmake-qt5 /usr/bin/qmake
           python -m pip install --upgrade pyqt5  &&
              python -c 'import PyQt5.QtCore' &&
              echo 'PyQt5 is available' ||
              echo 'PyQt5 is not available'
-          python -mpip install --upgrade pyside2 &&
-              python -c 'import PySide2.QtCore' &&
-              echo 'PySide2 is available' ||
-              echo 'PySide2 is not available'
           python -m pip uninstall --yes wxpython || echo 'wxPython already uninstalled'
 
       - name: Install Matplotlib
@@ -210,19 +200,18 @@ jobs:
             --config-settings=setup-args="-DrcParams-backend=Agg" \
             --editable .[dev]
 
+      # See http://cygwin.com/faq.html#faq.using.fixing-fork-failures
       - name: Find DLLs to rebase
         shell: bash.exe -eo pipefail -o igncr "{0}"
         run: |
           find {/usr,/usr/local}/{bin,lib/python3.*/site-packages} /usr/lib/lapack . \
             -name \*.exe -o -name \*.dll -print >files_to_rebase.txt
 
+      # Inplace modification of DLLs to assign non-overlapping load addresses so fork() works as expected.
+      # Ash is used as it does not link against any Cygwin DLLs that might need to be rebased.
       - name: Rebase DLL list
         shell: ash.exe "{0}"
         run: "rebase --database --filelist=files_to_rebase.txt"
-        # Inplace modification of DLLs to assign non-overlapping load
-        # addresses so fork() works as expected.  Ash is used as it
-        # does not link against any Cygwin DLLs that might need to be
-        # rebased.
 
       - name: Check that Matplotlib imports
         shell: bash.exe -eo pipefail -o igncr "{0}"
@@ -243,7 +232,7 @@ jobs:
         shell: bash.exe -eo pipefail -o igncr "{0}"
         id: cygwin-run-pytest
         run: |
-          xvfb-run pytest-3.${{ matrix.python-minor-version }} -rfEsXR -n auto \
+          xvfb-run pytest-3.${{ matrix.python-minor-version }} -vrfEsXR -n auto \
             --maxfail=50 --timeout=300 --durations=25 \
             --cov-report=xml --cov=lib --log-level=DEBUG --color=yes
 
