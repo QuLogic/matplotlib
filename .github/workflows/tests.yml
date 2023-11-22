@@ -32,7 +32,6 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (
-        github.repository == 'matplotlib/matplotlib' &&
         !contains(github.event.head_commit.message, '[ci skip]') &&
         !contains(github.event.head_commit.message, '[skip ci]') &&
         !contains(github.event.head_commit.message, '[skip github]') &&
@@ -47,38 +46,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name-suffix: "(Minimum Versions)"
-            os: ubuntu-20.04
-            python-version: 3.9
-            extra-requirements: '-c requirements/testing/minver.txt'
-            pyqt5-ver: '==5.12.2 sip==5.0.0'  # oldest versions with a Py3.9 wheel.
-            pyqt6-ver: '==6.1.0 PyQt6-Qt6==6.1.0'
-            pyside2-ver: '==5.15.1'  # oldest version with working Py3.9 wheel.
-            pyside6-ver: '==6.0.0'
-            delete-font-cache: true
-          - os: ubuntu-20.04
-            python-version: 3.9
-            extra-requirements: '-r requirements/testing/extra.txt'
-            CFLAGS: "-fno-lto"  # Ensure that disabling LTO works.
-            # https://github.com/matplotlib/matplotlib/pull/26052#issuecomment-1574595954
-            pyqt6-ver: '!=6.5.1'
-            # https://bugreports.qt.io/projects/PYSIDE/issues/PYSIDE-2346
-            pyside6-ver: '!=6.5.1'
-          - os: ubuntu-20.04
-            python-version: '3.10'
-            extra-requirements: '-r requirements/testing/extra.txt'
-            # https://github.com/matplotlib/matplotlib/pull/26052#issuecomment-1574595954
-            pyqt6-ver: '!=6.5.1'
-            # https://bugreports.qt.io/projects/PYSIDE/issues/PYSIDE-2346
-            pyside6-ver: '!=6.5.1'
-          - os: ubuntu-22.04
-            python-version: '3.11'
-            # https://bugreports.qt.io/projects/PYSIDE/issues/PYSIDE-2346
-            pyside6-ver: '!=6.5.1'
-            extra-requirements: '-r requirements/testing/extra.txt'
-          - os: ubuntu-22.04
-            python-version: '3.12'
-            pyside6-ver: '!=6.5.1'
           - os: macos-latest
             python-version: 3.9
             # https://bugreports.qt.io/projects/PYSIDE/issues/PYSIDE-2346
@@ -288,7 +255,6 @@ jobs:
           if [[ "${{ runner.os }}" == 'macOS' ]]; then
             export CPPFLAGS='-fprofile-instr-generate=default.%m.profraw'
             export CPPFLAGS="$CPPFLAGS -fcoverage-mapping"
-            export LLVM_PROFILE_FILE='default.%m.profraw'
           else
             export CPPFLAGS='--coverage -fprofile-abs-path'
           fi
@@ -296,6 +262,7 @@ jobs:
           python -m pip install --no-deps --no-build-isolation --verbose \
             --config-settings=setup-args="-DrcParams-backend=Agg" \
             --editable .[dev]
+          meson configure build/*/
 
           if [[ "${{ runner.os }}" != 'macOS' ]]; then
             unset CPPFLAGS
@@ -329,6 +296,8 @@ jobs:
           fi
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
+        with:
+          name: "GitHub Actions ${{ matrix.python-version }} ${{ matrix.os }} ${{ matrix.name-suffix }}"
 
       - uses: actions/upload-artifact@v3
         if: failure()
