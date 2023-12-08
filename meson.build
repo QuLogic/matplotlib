@@ -39,6 +39,7 @@ py_mod = import('python')
 py3 = py_mod.find_installation(pure: false)
 py3_dep = py3.dependency()
 
+eigen_dep = dependency('eigen3', version: '>=3')
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 subdir('extern')

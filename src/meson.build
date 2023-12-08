@@ -46,6 +46,13 @@ extension_data = {
     ),
     'dependencies': [pybind11_dep, dl, ole32, shell32, user32],
   },
+  '_eigen': {
+    'subdir': 'matplotlib',
+    'sources': files(
+      '_eigen.cpp',
+    ),
+    'dependencies': [pybind11_dep, eigen_dep],
+  },
   'ft2font': {
     'subdir': 'matplotlib',
     'sources': files(

@@ -80,6 +80,7 @@ typing_sources = [
   'py.typed',
   # Compiled extension types.
   '_c_internal_utils.pyi',
+  '_eigen.pyi',
   'ft2font.pyi',
   '_image.pyi',
   '_qhull.pyi',

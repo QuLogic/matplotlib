@@ -44,7 +44,7 @@ import math
 import numpy as np
 from numpy.linalg import inv
 
-from matplotlib import _api
+from matplotlib import _api, _eigen
 from matplotlib._path import affine_transform, count_bboxes_overlapping_bbox
 from .path import Path
 
@@ -1918,20 +1918,20 @@ class Affine2D(Affine2DBase):
         If *matrix* is None, initialize with the identity transform.
         """
         super().__init__(**kwargs)
-        if matrix is None:
-            # A bit faster than np.identity(3).
-            matrix = IdentityTransform._mtx
-        self._mtx = matrix.copy()
+        if matrix is not None:
+            self._mtx = _eigen.Affine2d(matrix)
+        else:
+            self._mtx = _eigen.Affine2d()
         self._invalid = 0
 
     _base_str = _make_str_method("_mtx")
 
     def __str__(self):
         return (self._base_str()
-                if (self._mtx != np.diag(np.diag(self._mtx))).any()
-                else f"Affine2D().scale({self._mtx[0, 0]}, {self._mtx[1, 1]})"
-                if self._mtx[0, 0] != self._mtx[1, 1]
-                else f"Affine2D().scale({self._mtx[0, 0]})")
+                if not self._mtx.is_diagonal
+                else f"Affine2D().scale({self._mtx(0, 0)}, {self._mtx(1, 1)})"
+                if self._mtx(0, 0) != self._mtx(1, 1)
+                else f"Affine2D().scale({self._mtx(0, 0)})")
 
     @staticmethod
     def from_values(a, b, c, d, e, f):
@@ -1944,8 +1944,7 @@ class Affine2D(Affine2DBase):
 
         .
         """
-        return Affine2D(
-            np.array([a, c, e, b, d, f, 0.0, 0.0, 1.0], float).reshape((3, 3)))
+        return Affine2D([[a, c, e], [b, d, f], [0.0, 0.0, 1.0]])
 
     def get_matrix(self):
         """
@@ -1960,7 +1959,7 @@ class Affine2D(Affine2DBase):
         if self._invalid:
             self._inverted = None
             self._invalid = 0
-        return self._mtx
+        return self._mtx.get_matrix()
 
     def set_matrix(self, mtx):
         """
@@ -2679,8 +2678,7 @@ class ScaledTranslation(Affine2DBase):
     def get_matrix(self):
         # docstring inherited
         if self._invalid:
-            # A bit faster than np.identity(3).
-            self._mtx = IdentityTransform._mtx.copy()
+            self._mtx = _eigen.Affine2d()
             self._mtx[:2, 2] = self._scale_trans.transform(self._t)
             self._invalid = 0
             self._inverted = None
