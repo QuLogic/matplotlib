@@ -1,15 +1,3 @@
-// Matrix operations we need:
-// .copy()
-// check if [0, 0] != [1, 1]
-// re-set a, b, c, d, e, f
-// convert to NumPy matrix
-// reset to identity
-// rotate in place
-// translate in place
-// scale in place
-// skew in place
-// dot two matrices
-
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
@@ -46,5 +34,44 @@ PYBIND11_MODULE(_eigen, m) {
             }
             return self(i, j);
         }, "i"_a, "j"_a)
+
+        .def("__matmul__", [](const Eigen::Affine2d& self, const Eigen::Affine2d& other) {
+            return self * other;
+        }, "other"_a,
+        "Combines two transforms.")
+
+        .def("remove_translate", [](Eigen::Affine2d& self) {
+            self(0, 2) = 0.0;
+            self(1, 2) = 0.0;
+        },
+        "Remove the translation part of a transform.")
+
+        .def("reset", [](Eigen::Affine2d& self) {
+            self.setIdentity();
+        },
+        "Reset to the identity transformation.")
+
+        .def("rotate", [](Eigen::Affine2d& self, double theta) {
+            self.prerotate(theta);
+        }, "theta"_a,
+        "Add a rotation (in radians) to this transform in place.")
+
+        .def("scale", [](Eigen::Affine2d& self, double sx, double sy) {
+            self.prescale(Eigen::Vector2d(sx, sy));
+        }, "sx"_a, "sy"_a,
+        "Add a scale in place.")
+
+        .def("skew", [](Eigen::Affine2d& self, double xShear, double yShear) {
+            // Transform.preshear appears to be buggy in Eigen 3.4, so do this manually.
+            auto skew = Eigen::Affine2d::Identity();
+            skew.shear(tan(yShear), tan(xShear));
+            self = skew * self;
+        }, "xShear"_a, "yShear"_a,
+        "Add a skew in place.")
+
+        .def("translate", [](Eigen::Affine2d& self, double tx, double ty) {
+            self.pretranslate(Eigen::Vector2d(tx, ty));
+        }, "tx"_a, "ty"_a,
+        "Add a translation in place.")
     ;
 }

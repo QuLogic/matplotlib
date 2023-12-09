@@ -1971,7 +1971,7 @@ class Affine2D(Affine2DBase):
 
         .
         """
-        self._mtx = mtx
+        self._mtx = _eigen.Affine2d(mtx)
         self.invalidate()
 
     def set(self, other):
@@ -1980,15 +1980,14 @@ class Affine2D(Affine2DBase):
         `Affine2DBase` object.
         """
         _api.check_isinstance(Affine2DBase, other=other)
-        self._mtx = other.get_matrix()
+        self._mtx = _eigen.Affine2d(other.get_matrix())
         self.invalidate()
 
     def clear(self):
         """
         Reset the underlying matrix to the identity transform.
         """
-        # A bit faster than np.identity(3).
-        self._mtx = IdentityTransform._mtx.copy()
+        self._mtx.reset()
         self.invalidate()
         return self
 
@@ -2000,18 +1999,7 @@ class Affine2D(Affine2DBase):
         calls to :meth:`rotate`, :meth:`rotate_deg`, :meth:`translate`
         and :meth:`scale`.
         """
-        a = math.cos(theta)
-        b = math.sin(theta)
-        mtx = self._mtx
-        # Operating and assigning one scalar at a time is much faster.
-        (xx, xy, x0), (yx, yy, y0), _ = mtx.tolist()
-        # mtx = [[a -b 0], [b a 0], [0 0 1]] * mtx
-        mtx[0, 0] = a * xx - b * yx
-        mtx[0, 1] = a * xy - b * yy
-        mtx[0, 2] = a * x0 - b * y0
-        mtx[1, 0] = b * xx + a * yx
-        mtx[1, 1] = b * xy + a * yy
-        mtx[1, 2] = b * x0 + a * y0
+        self._mtx.rotate(theta)
         self.invalidate()
         return self
 
@@ -2055,8 +2043,7 @@ class Affine2D(Affine2DBase):
         calls to :meth:`rotate`, :meth:`rotate_deg`, :meth:`translate`
         and :meth:`scale`.
         """
-        self._mtx[0, 2] += tx
-        self._mtx[1, 2] += ty
+        self._mtx.translate(tx, ty)
         self.invalidate()
         return self
 
@@ -2073,13 +2060,7 @@ class Affine2D(Affine2DBase):
         """
         if sy is None:
             sy = sx
-        # explicit element-wise scaling is fastest
-        self._mtx[0, 0] *= sx
-        self._mtx[0, 1] *= sx
-        self._mtx[0, 2] *= sx
-        self._mtx[1, 0] *= sy
-        self._mtx[1, 1] *= sy
-        self._mtx[1, 2] *= sy
+        self._mtx.scale(sx, sy)
         self.invalidate()
         return self
 
@@ -2094,18 +2075,7 @@ class Affine2D(Affine2DBase):
         calls to :meth:`rotate`, :meth:`rotate_deg`, :meth:`translate`
         and :meth:`scale`.
         """
-        rx = math.tan(xShear)
-        ry = math.tan(yShear)
-        mtx = self._mtx
-        # Operating and assigning one scalar at a time is much faster.
-        (xx, xy, x0), (yx, yy, y0), _ = mtx.tolist()
-        # mtx = [[1 rx 0], [ry 1 0], [0 0 1]] * mtx
-        mtx[0, 0] += rx * yx
-        mtx[0, 1] += rx * yy
-        mtx[0, 2] += rx * y0
-        mtx[1, 0] += ry * xx
-        mtx[1, 1] += ry * xy
-        mtx[1, 2] += ry * x0
+        self._mtx.skew(xShear, yShear)
         self.invalidate()
         return self
 
@@ -2128,7 +2098,7 @@ class IdentityTransform(Affine2DBase):
     A special class that does one thing, the identity transform, in a
     fast way.
     """
-    _mtx = np.identity(3)
+    _mtx = _eigen.Affine2d()
 
     def frozen(self):
         # docstring inherited
@@ -2138,7 +2108,7 @@ class IdentityTransform(Affine2DBase):
 
     def get_matrix(self):
         # docstring inherited
-        return self._mtx
+        return self._mtx.get_matrix()
 
     def transform(self, values):
         # docstring inherited
@@ -2325,16 +2295,16 @@ class BlendedAffine2D(_BlendedMixin, Affine2DBase):
         # docstring inherited
         if self._invalid:
             if self._x == self._y:
-                self._mtx = self._x.get_matrix()
+                self._mtx = _eigen.Affine2d(self._x.get_matrix())
             else:
                 x_mtx = self._x.get_matrix()
                 y_mtx = self._y.get_matrix()
                 # We already know the transforms are separable, so we can skip
                 # setting b and c to zero.
-                self._mtx = np.array([x_mtx[0], y_mtx[1], [0.0, 0.0, 1.0]])
+                self._mtx = _eigen.Affine2d([x_mtx[0], y_mtx[1], [0.0, 0.0, 1.0]])
             self._inverted = None
             self._invalid = 0
-        return self._mtx
+        return self._mtx.get_matrix()
 
 
 def blended_transform_factory(x_transform, y_transform):
@@ -2510,12 +2480,10 @@ class CompositeAffine2D(Affine2DBase):
     def get_matrix(self):
         # docstring inherited
         if self._invalid:
-            self._mtx = np.dot(
-                self._b.get_matrix(),
-                self._a.get_matrix())
+            self._mtx = self._b._mtx @ self._a._mtx
             self._inverted = None
             self._invalid = 0
-        return self._mtx
+        return self._mtx.get_matrix()
 
 
 def composite_transform_factory(a, b):
@@ -2578,13 +2546,14 @@ class BboxTransform(Affine2DBase):
             if DEBUG and (x_scale == 0 or y_scale == 0):
                 raise ValueError(
                     "Transforming from or to a singular bounding box")
-            self._mtx = np.array([[x_scale,     0.0, -inl*x_scale+outl],
-                                  [    0.0, y_scale, -inb*y_scale+outb],
-                                  [    0.0,     0.0,               1.0]],
-                                 float)
+            self._mtx = _eigen.Affine2d([
+                [x_scale,     0.0, -inl*x_scale+outl],
+                [    0.0, y_scale, -inb*y_scale+outb],
+                [    0.0,     0.0,               1.0],
+            ])
             self._inverted = None
             self._invalid = 0
-        return self._mtx
+        return self._mtx.get_matrix()
 
 
 class BboxTransformTo(Affine2DBase):
@@ -2616,13 +2585,14 @@ class BboxTransformTo(Affine2DBase):
             outl, outb, outw, outh = self._boxout.bounds
             if DEBUG and (outw == 0 or outh == 0):
                 raise ValueError("Transforming to a singular bounding box.")
-            self._mtx = np.array([[outw,  0.0, outl],
-                                  [ 0.0, outh, outb],
-                                  [ 0.0,  0.0,  1.0]],
-                                 float)
+            self._mtx = _eigen.Affine2d([
+                [outw,  0.0, outl],
+                [ 0.0, outh, outb],
+                [ 0.0,  0.0,  1.0],
+            ])
             self._inverted = None
             self._invalid = 0
-        return self._mtx
+        return self._mtx.get_matrix()
 
 
 class BboxTransformFrom(Affine2DBase):
@@ -2651,13 +2621,14 @@ class BboxTransformFrom(Affine2DBase):
                 raise ValueError("Transforming from a singular bounding box.")
             x_scale = 1.0 / inw
             y_scale = 1.0 / inh
-            self._mtx = np.array([[x_scale,     0.0, -inl*x_scale],
-                                  [    0.0, y_scale, -inb*y_scale],
-                                  [    0.0,     0.0,          1.0]],
-                                 float)
+            self._mtx = _eigen.Affine2d([
+                [x_scale,     0.0, -inl*x_scale],
+                [    0.0, y_scale, -inb*y_scale],
+                [    0.0,     0.0,          1.0],
+            ])
             self._inverted = None
             self._invalid = 0
-        return self._mtx
+        return self._mtx.get_matrix()
 
 
 class ScaledTranslation(Affine2DBase):
@@ -2679,10 +2650,10 @@ class ScaledTranslation(Affine2DBase):
         # docstring inherited
         if self._invalid:
             self._mtx = _eigen.Affine2d()
-            self._mtx[:2, 2] = self._scale_trans.transform(self._t)
+            self._mtx.translate(*self._scale_trans.transform(self._t))
             self._invalid = 0
             self._inverted = None
-        return self._mtx
+        return self._mtx.get_matrix()
 
 
 class _ScaledRotation(Affine2DBase):
@@ -2732,9 +2703,9 @@ class AffineDeltaTransform(Affine2DBase):
 
     def get_matrix(self):
         if self._invalid:
-            self._mtx = self._base_transform.get_matrix().copy()
-            self._mtx[:2, -1] = 0
-        return self._mtx
+            self._mtx = _eigen.Affine2d(self._base_transform.get_matrix())
+            self._mtx.remove_translate()
+        return self._mtx.get_matrix()
 
 
 class TransformedPath(TransformNode):
