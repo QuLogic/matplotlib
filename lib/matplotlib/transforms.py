@@ -42,7 +42,6 @@ import weakref
 import math
 
 import numpy as np
-from numpy.linalg import inv
 
 from matplotlib import _api, _eigen
 from matplotlib._path import count_bboxes_overlapping_bbox
@@ -1902,11 +1901,11 @@ class Affine2DBase(AffineBase):
     def inverted(self):
         # docstring inherited
         if self._inverted is None or self._invalid:
-            mtx = self.get_matrix()
+            mtx = self._get_eigen_matrix()
             shorthand_name = None
             if self._shorthand_name:
-                shorthand_name = '(%s)-1' % self._shorthand_name
-            self._inverted = Affine2D(inv(mtx), shorthand_name=shorthand_name)
+                shorthand_name = '({self._shorthand_name})-1'
+            self._inverted = Affine2D(mtx.inverse(), shorthand_name=shorthand_name)
             self._invalid = 0
         return self._inverted
 

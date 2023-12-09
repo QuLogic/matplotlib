@@ -778,8 +778,8 @@ class TestTransformPlotInterface:
         trans = mtransforms.blended_transform_factory(
             ax.transAxes, mtransforms.Affine2D().scale(10) + ax.transData)
         ax.plot([0.1, 1.2, 0.8], [35, -5, 18], transform=trans)
-        assert_array_equal(ax.dataLim.get_points(),
-                           np.array([[np.inf, -50.], [-np.inf, 350.]]))
+        assert_array_almost_equal(ax.dataLim.get_points(),
+                                  np.array([[np.inf, -50.], [-np.inf, 350.]]))
 
     def test_line_extents_affine(self):
         ax = plt.axes()

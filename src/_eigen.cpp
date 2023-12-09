@@ -12,6 +12,10 @@ PYBIND11_MODULE(_eigen, m) {
         .def(py::init([]() {
             return Eigen::Affine2d::Identity();
         }))
+        .def(py::init([](const Eigen::Affine2d& matrix) {
+            return Eigen::Affine2d(matrix);
+        }),
+        "matrix"_a.none(false))
         .def(py::init([](const Eigen::Matrix3d& matrix) {
             return Eigen::Affine2d(matrix);
         }),
@@ -75,6 +79,11 @@ PYBIND11_MODULE(_eigen, m) {
             return self * other;
         }, "other"_a,
         "Combines two transforms.")
+
+        .def("inverse", [](const Eigen::Affine2d& self) {
+            return self.inverse();
+        },
+        "Calculate the inverse of this transformation.")
 
         .def("remove_translate", [](Eigen::Affine2d& self) {
             self(0, 2) = 0.0;
