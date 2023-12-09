@@ -116,36 +116,6 @@ Py_clip_path_to_rect(mpl::PathIterator path, agg::rect_d rect, bool inside)
     return convert_polygon_vector(result);
 }
 
-static py::object
-Py_affine_transform(py::array_t<double, py::array::c_style | py::array::forcecast> vertices_arr,
-                    agg::trans_affine trans)
-{
-    if (vertices_arr.ndim() == 2) {
-        auto vertices = vertices_arr.unchecked<2>();
-
-        check_trailing_shape(vertices, "vertices", 2);
-
-        py::ssize_t dims[] = { vertices.shape(0), 2 };
-        py::array_t<double> result(dims);
-        auto result_mutable = result.mutable_unchecked<2>();
-
-        affine_transform_2d(vertices, trans, result_mutable);
-        return result;
-    } else if (vertices_arr.ndim() == 1) {
-        auto vertices = vertices_arr.unchecked<1>();
-
-        py::ssize_t dims[] = { vertices.shape(0) };
-        py::array_t<double> result(dims);
-        auto result_mutable = result.mutable_unchecked<1>();
-
-        affine_transform_1d(vertices, trans, result_mutable);
-        return result;
-    } else {
-        throw py::value_error(
-            "vertices must be 1D or 2D, not" + std::to_string(vertices_arr.ndim()) + "D");
-    }
-}
-
 static int
 Py_count_bboxes_overlapping_bbox(agg::rect_d bbox, py::array_t<double> bboxes_obj)
 {
@@ -326,8 +296,6 @@ PYBIND11_MODULE(_path, m, py::mod_gil_not_used())
           "path_a"_a, "trans_a"_a, "path_b"_a, "trans_b"_a);
     m.def("clip_path_to_rect", &Py_clip_path_to_rect,
           "path"_a, "rect"_a, "inside"_a);
-    m.def("affine_transform", &Py_affine_transform,
-          "points"_a, "trans"_a);
     m.def("count_bboxes_overlapping_bbox", &Py_count_bboxes_overlapping_bbox,
           "bbox"_a, "bboxes"_a);
     m.def("path_intersects_path", &Py_path_intersects_path,

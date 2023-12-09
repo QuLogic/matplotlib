@@ -699,63 +699,6 @@ clip_path_to_rect(PathIterator &path, agg::rect_d &rect, bool inside, std::vecto
     _finalize_polygon(results, 1);
 }
 
-template <class VerticesArray, class ResultArray>
-void affine_transform_2d(VerticesArray &vertices, agg::trans_affine &trans, ResultArray &result)
-{
-    if (vertices.size() != 0 && vertices.shape(1) != 2) {
-        throw std::runtime_error("Invalid vertices array.");
-    }
-
-    size_t n = vertices.shape(0);
-    double x;
-    double y;
-    double t0;
-    double t1;
-    double t;
-
-    for (size_t i = 0; i < n; ++i) {
-        x = vertices(i, 0);
-        y = vertices(i, 1);
-
-        t0 = trans.sx * x;
-        t1 = trans.shx * y;
-        t = t0 + t1 + trans.tx;
-        result(i, 0) = t;
-
-        t0 = trans.shy * x;
-        t1 = trans.sy * y;
-        t = t0 + t1 + trans.ty;
-        result(i, 1) = t;
-    }
-}
-
-template <class VerticesArray, class ResultArray>
-void affine_transform_1d(VerticesArray &vertices, agg::trans_affine &trans, ResultArray &result)
-{
-    if (vertices.shape(0) != 2) {
-        throw std::runtime_error("Invalid vertices array.");
-    }
-
-    double x;
-    double y;
-    double t0;
-    double t1;
-    double t;
-
-    x = vertices(0);
-    y = vertices(1);
-
-    t0 = trans.sx * x;
-    t1 = trans.shx * y;
-    t = t0 + t1 + trans.tx;
-    result(0) = t;
-
-    t0 = trans.shy * x;
-    t1 = trans.sy * y;
-    t = t0 + t1 + trans.ty;
-    result(1) = t;
-}
-
 template <class BBoxArray>
 int count_bboxes_overlapping_bbox(agg::rect_d &a, BBoxArray &bboxes)
 {

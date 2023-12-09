@@ -45,7 +45,7 @@ import numpy as np
 from numpy.linalg import inv
 
 from matplotlib import _api, _eigen
-from matplotlib._path import affine_transform, count_bboxes_overlapping_bbox
+from matplotlib._path import count_bboxes_overlapping_bbox
 from .path import Path
 
 DEBUG = False
@@ -1798,6 +1798,15 @@ class AffineBase(Transform):
         # optimises the access of the transform matrix vs. the superclass
         return self.get_matrix()
 
+    def _get_eigen_matrix(self):
+        if self._invalid:
+            mtx = self.get_matrix()
+        # Back-compat with external stuff.
+        if isinstance(eigen := getattr(self, '_mtx'), _eigen.Affine2d):
+            return eigen
+        else:
+            return _eigen.Affine2d(mtx)
+
     def __eq__(self, other):
         if getattr(other, "is_affine", False) and hasattr(other, "get_matrix"):
             return (self.get_matrix() == other.get_matrix()).all()
@@ -1870,11 +1879,11 @@ class Affine2DBase(AffineBase):
         return tuple(mtx[:2].swapaxes(0, 1).flat)
 
     def transform_affine(self, values):
-        mtx = self.get_matrix()
+        mtx = self._get_eigen_matrix()
         if isinstance(values, np.ma.MaskedArray):
-            tpoints = affine_transform(values.data, mtx)
+            tpoints = mtx.affine_transform(values.data)
             return np.ma.MaskedArray(tpoints, mask=np.ma.getmask(values))
-        return affine_transform(values, mtx)
+        return mtx.affine_transform(values)
 
     if DEBUG:
         _transform_affine = transform_affine

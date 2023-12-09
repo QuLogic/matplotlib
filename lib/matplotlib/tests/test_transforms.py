@@ -285,24 +285,22 @@ class TestAffine2D:
         assert_array_almost_equal(trans.transform(self.multiple_points),
                                   [[45, 49.75], [48.5, 51.5], [48, 48.75]])
 
-    def test_invalid_transform(self):
+    def test_invalid_arguments(self):
         t = mtransforms.Affine2D()
-        # There are two different exceptions, since the wrong number of
-        # dimensions is caught when constructing an array_view, and that
-        # raises a ValueError, and a wrong shape with a possible number
-        # of dimensions is caught by our CALL_CPP macro, which always
-        # raises the less precise RuntimeError.
-        with pytest.raises(ValueError):
+        # The wrong number of dimensions and a wrong shape with a possible number of
+        # dimensions are both caught by pybind11, which always raises the less precise
+        # RuntimeError.
+        with pytest.raises(RuntimeError):
             t.transform(1)
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             t.transform([[[1]]])
         with pytest.raises(RuntimeError):
             t.transform([])
         with pytest.raises(RuntimeError):
             t.transform([1])
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             t.transform([[1]])
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             t.transform([[1, 2, 3]])
 
     def test_copy(self):
