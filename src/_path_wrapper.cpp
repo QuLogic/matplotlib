@@ -339,51 +339,6 @@ static PyObject *Py_clip_path_to_rect(PyObject *self, PyObject *args)
     return convert_polygon_vector(result);
 }
 
-const char *Py_affine_transform__doc__ =
-    "affine_transform(points, trans)\n"
-    "--\n\n";
-
-static PyObject *Py_affine_transform(PyObject *self, PyObject *args)
-{
-    PyObject *vertices_obj;
-    agg::trans_affine trans;
-
-    if (!PyArg_ParseTuple(args,
-                          "OO&:affine_transform",
-                          &vertices_obj,
-                          &convert_trans_affine,
-                          &trans)) {
-        return NULL;
-    }
-
-    PyArrayObject* vertices_arr = (PyArrayObject *)PyArray_ContiguousFromAny(vertices_obj, NPY_DOUBLE, 1, 2);
-    if (vertices_arr == NULL) {
-        return NULL;
-    }
-
-    if (PyArray_NDIM(vertices_arr) == 2) {
-        numpy::array_view<double, 2> vertices(vertices_arr);
-        Py_DECREF(vertices_arr);
-
-        if(!check_trailing_shape(vertices, "vertices", 2)) {
-            return NULL;
-        }
-
-        npy_intp dims[] = { (npy_intp)vertices.shape(0), 2 };
-        numpy::array_view<double, 2> result(dims);
-        CALL_CPP("affine_transform", (affine_transform_2d(vertices, trans, result)));
-        return result.pyobj();
-    } else { // PyArray_NDIM(vertices_arr) == 1
-        numpy::array_view<double, 1> vertices(vertices_arr);
-        Py_DECREF(vertices_arr);
-
-        npy_intp dims[] = { (npy_intp)vertices.shape(0) };
-        numpy::array_view<double, 1> result(dims);
-        CALL_CPP("affine_transform", (affine_transform_1d(vertices, trans, result)));
-        return result.pyobj();
-    }
-}
-
 const char *Py_count_bboxes_overlapping_bbox__doc__ =
     "count_bboxes_overlapping_bbox(bbox, bboxes)\n"
     "--\n\n";
@@ -758,7 +713,6 @@ static PyMethodDef module_functions[] = {
     {"point_in_path_collection", (PyCFunction)Py_point_in_path_collection, METH_VARARGS, Py_point_in_path_collection__doc__},
     {"path_in_path", (PyCFunction)Py_path_in_path, METH_VARARGS, Py_path_in_path__doc__},
     {"clip_path_to_rect", (PyCFunction)Py_clip_path_to_rect, METH_VARARGS, Py_clip_path_to_rect__doc__},
-    {"affine_transform", (PyCFunction)Py_affine_transform, METH_VARARGS, Py_affine_transform__doc__},
     {"count_bboxes_overlapping_bbox", (PyCFunction)Py_count_bboxes_overlapping_bbox, METH_VARARGS, Py_count_bboxes_overlapping_bbox__doc__},
     {"path_intersects_path", (PyCFunction)Py_path_intersects_path, METH_VARARGS|METH_KEYWORDS, Py_path_intersects_path__doc__},
     {"path_intersects_rectangle", (PyCFunction)Py_path_intersects_rectangle, METH_VARARGS|METH_KEYWORDS, Py_path_intersects_rectangle__doc__},
