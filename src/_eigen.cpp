@@ -17,6 +17,42 @@ PYBIND11_MODULE(_eigen, m) {
         }),
         "matrix"_a.none(false))
 
+        .def("copy", [](const Eigen::Affine2d& self) {
+            return Eigen::Affine2d(self);
+        })
+        .def("__copy__", [](const Eigen::Affine2d& self) {
+            return Eigen::Affine2d(self);
+        })
+        .def("__deepcopy__", [](const Eigen::Affine2d& self, py::dict) {
+            return Eigen::Affine2d(self);
+        }, "memo"_a)
+        .def(py::pickle(
+            [](const Eigen::Affine2d &self) { // __getstate__
+                return py::make_tuple(
+                    self(0, 0), self(0, 1), self(0, 2),
+                    self(1, 0), self(1, 1), self(1, 2));
+            },
+            [](const py::tuple& t) { // __setstate__
+                if (t.size() != 6) {
+                    throw std::runtime_error("Invalid state!");
+                }
+
+                Eigen::Affine2d ret;
+
+                ret(0, 0) = t[0].cast<double>();
+                ret(0, 1) = t[1].cast<double>(); 
+                ret(0, 2) = t[2].cast<double>();
+
+                ret(1, 0) = t[3].cast<double>(); 
+                ret(1, 1) = t[4].cast<double>(); 
+                ret(1, 2) = t[5].cast<double>();
+
+                ret.makeAffine();
+
+                return ret;
+            }
+        ))
+
         .def("get_matrix", [](const Eigen::Affine2d& self) {
             return self.matrix();
         })
