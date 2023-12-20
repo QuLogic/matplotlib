@@ -1073,8 +1073,7 @@ class PolarAxes(Axes):
         """
         Set the offset for the location of 0 in radians.
         """
-        mtx = self._theta_offset.get_matrix()
-        mtx[0, 2] = offset
+        self._theta_offset._mtx._set_translatex(offset)
         self._theta_offset.invalidate()
 
     def get_theta_offset(self):
@@ -1119,11 +1118,10 @@ class PolarAxes(Axes):
         counterclockwise, anticlockwise, 1:
            Theta increases in the counterclockwise direction
         """
-        mtx = self._direction.get_matrix()
         if direction in ('clockwise', -1):
-            mtx[0, 0] = -1
+            self._direction._mtx._set_scalex(-1)
         elif direction in ('counterclockwise', 'anticlockwise', 1):
-            mtx[0, 0] = 1
+            self._direction._mtx._set_scalex(1)
         else:
             _api.check_in_list(
                 [-1, 1, 'clockwise', 'counterclockwise', 'anticlockwise'],

@@ -132,5 +132,13 @@ PYBIND11_MODULE(_eigen, m) {
                 return result.attr("transpose")();
             }
         )
+
+        // Helpers for PolarTransform.
+        .def("_set_scalex", [](Eigen::Affine2d& self, double scale) {
+            self(0, 0) = scale;
+        })
+        .def("_set_translatex", [](Eigen::Affine2d& self, double offset) {
+            self(0, 2) = offset;
+        })
     ;
 }
