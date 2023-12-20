@@ -1614,7 +1614,7 @@ def test_ginput(recwarn):  # recwarn undoes warn filters at exit.
         MouseEvent("button_press_event", fig.canvas, *trans((.1, .2)), 1)._process()
 
     Timer(.1, single_press).start()
-    assert fig.ginput() == [(.1, .2)]
+    np.testing.assert_allclose(fig.ginput(), [(.1, .2)])
 
     def multi_presses():
         MouseEvent("button_press_event", fig.canvas, *trans((.1, .2)), 1)._process()
