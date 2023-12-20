@@ -287,20 +287,17 @@ class TestAffine2D:
 
     def test_invalid_arguments(self):
         t = mtransforms.Affine2D()
-        # The wrong number of dimensions and a wrong shape with a possible number of
-        # dimensions are both caught by pybind11, which always raises the less precise
-        # RuntimeError.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             t.transform(1)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             t.transform([[[1]]])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             t.transform([])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             t.transform([1])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             t.transform([[1]])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TypeError):
             t.transform([[1, 2, 3]])
 
     def test_copy(self):

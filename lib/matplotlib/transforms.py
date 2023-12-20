@@ -1880,9 +1880,14 @@ class Affine2DBase(AffineBase):
     def transform_affine(self, values):
         mtx = self._get_eigen_matrix()
         if isinstance(values, np.ma.MaskedArray):
-            tpoints = mtx.affine_transform(values.data)
-            return np.ma.MaskedArray(tpoints, mask=np.ma.getmask(values))
-        return mtx.affine_transform(values)
+            tpoints = mtx.affine_transform(values.data.T).T
+            result = np.ma.MaskedArray(tpoints, mask=np.ma.getmask(values))
+        else:
+            values = np.asarray(values)
+            result = mtx.affine_transform(values.T).T
+        if len(values.shape) == 2:
+            result = np.atleast_2d(result)
+        return result
 
     if DEBUG:
         _transform_affine = transform_affine

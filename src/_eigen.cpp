@@ -126,10 +126,8 @@ PYBIND11_MODULE(_eigen, m) {
             }
         )
         .def("affine_transform",
-            [](const Eigen::Affine2d& self, py::array_t<double> vertices_arr) {
-                auto vertices = vertices_arr.attr("transpose")().cast<Eigen::Ref<const Eigen::Matrix2Xd>>();
-                auto result = py::cast(self * vertices, py::return_value_policy::move);
-                return result.attr("transpose")();
+            [](const Eigen::Affine2d& self, Eigen::Ref<const Eigen::Matrix2Xd> vertices) {
+                return self * vertices;
             }
         )
 
