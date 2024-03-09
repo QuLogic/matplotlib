@@ -179,9 +179,9 @@ PyFT2Font_init(py::object filename, long hinting_factor = 8,
     }
 
     PyFT2Font *self = new PyFT2Font();
-    self->x = NULL;
+    self->x = nullptr;
     memset(&self->stream, 0, sizeof(FT_StreamRec));
-    self->stream.base = NULL;
+    self->stream.base = nullptr;
     self->stream.size = 0x7fffffff;  // Unknown size.
     self->stream.pos = 0;
     self->stream.descriptor.pointer = self;
@@ -218,7 +218,7 @@ PyFT2Font_init(py::object filename, long hinting_factor = 8,
                 "First argument must be a path to a font file or a binary-mode file object");
         }
         self->py_file = filename;
-        self->stream.close = NULL;
+        self->stream.close = nullptr;
     }
 
     self->x = new FT2Font(open_args, hinting_factor, fallback_fonts, ft_glyph_warn);
@@ -367,7 +367,7 @@ PyFT2Font_load_char(PyFT2Font *self, long charcode,
                     FT_Int32 flags = FT_LOAD_FORCE_AUTOHINT)
 {
     bool fallback = true;
-    FT2Font *ft_object = NULL;
+    FT2Font *ft_object = nullptr;
 
     self->x->load_char(charcode, flags, ft_object, fallback);
 
@@ -394,7 +394,7 @@ PyFT2Font_load_glyph(PyFT2Font *self, FT_UInt glyph_index,
                      FT_Int32 flags = FT_LOAD_FORCE_AUTOHINT)
 {
     bool fallback = true;
-    FT2Font *ft_object = NULL;
+    FT2Font *ft_object = nullptr;
 
     self->x->load_glyph(glyph_index, flags, ft_object, fallback);
 
@@ -814,7 +814,7 @@ static const char *
 PyFT2Font_postscript_name(PyFT2Font *self)
 {
     const char *ps_name = FT_Get_Postscript_Name(self->x->get_face());
-    if (ps_name == NULL) {
+    if (ps_name == nullptr) {
         ps_name = "UNAVAILABLE";
     }
 
@@ -831,7 +831,7 @@ static const char *
 PyFT2Font_family_name(PyFT2Font *self)
 {
     const char *name = self->x->get_face()->family_name;
-    if (name == NULL) {
+    if (name == nullptr) {
         name = "UNAVAILABLE";
     }
     return name;
@@ -841,7 +841,7 @@ static const char *
 PyFT2Font_style_name(PyFT2Font *self)
 {
     const char *name = self->x->get_face()->style_name;
-    if (name == NULL) {
+    if (name == nullptr) {
         name = "UNAVAILABLE";
     }
     return name;

@@ -28,7 +28,7 @@ class PythonFileWriter : public TTStreamWriter
     virtual void write(const char *a)
     {
         PyObject* decoded = PyUnicode_DecodeLatin1(a, strlen(a), "");
-        if (decoded == NULL) {
+        if (decoded == nullptr) {
             throw py::error_already_set();
         }
         _write_method(py::handle(decoded));
