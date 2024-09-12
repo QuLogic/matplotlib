@@ -161,12 +161,27 @@ extension_data = {
   },
 }
 
+if cpp.get_id() == 'msvc'
+  # This flag fixes some bugs with the macro processing, namely
+  # https://learn.microsoft.com/en-us/cpp/preprocessor/preprocessor-experimental-overview?view=msvc-170#macro-arguments-are-unpacked
+  if cpp.has_argument('/Zc:preprocessor')
+    # This flag was added in MSVC 2019 version 16.5, which deprecated the one below.
+    new_preprocessor = '/Zc:preprocessor'
+  else
+    # Since we currently support any version of MSVC 2019 (vc142), we'll stick with the
+    # older flag, added in MSVC 2017 version 15.8.
+    new_preprocessor = '/experimental:preprocessor'
+  endif
+else
+  new_preprocessor = []
+endif
+
 foreach ext, kwargs : extension_data
   # Ensure that PY_ARRAY_UNIQUE_SYMBOL is uniquely defined for each extension.
   unique_array_api = '-DPY_ARRAY_UNIQUE_SYMBOL=MPL_@0@_ARRAY_API'.format(ext.replace('.', '_'))
   additions = {
     'c_args': [unique_array_api] + kwargs.get('c_args', []),
-    'cpp_args': [unique_array_api] + kwargs.get('cpp_args', []),
+    'cpp_args': [new_preprocessor, unique_array_api] + kwargs.get('cpp_args', []),
   }
   py3.extension_module(
     ext,
