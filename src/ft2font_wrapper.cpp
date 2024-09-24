@@ -207,6 +207,8 @@ P11X_DECLARE_ENUM(
  * FT2Image
  * */
 
+using double_or_long = std::variant<double, long>;
+
 const char *PyFT2Image__doc__ = R"""(
     An image buffer for drawing glyphs.
 )""";
@@ -227,9 +229,32 @@ const char *PyFT2Image_draw_rect_filled__doc__ = R"""(
         The bounds of the rectangle from (x0, y0) to (x1, y1).
 )""";
 
-static void
-PyFT2Image_draw_rect_filled(FT2Image *self, double x0, double y0, double x1, double y1)
+static long
+_double_to_long(const char *name, double_or_long &var)
 {
+    if (auto value = std::get_if<double>(&var)) {
+        auto api = py::module_::import("matplotlib._api");
+        auto warn = api.attr("warn_deprecated");
+        warn("since"_a="3.10", "name"_a=name, "obj_type"_a="parameter as float",
+             "alternative"_a="int({})"_s.format(name));
+        return static_cast<long>(*value);
+    } else if (auto value = std::get_if<long>(&var)) {
+        return *value;
+    } else {
+        throw std::runtime_error("Should not happen");
+    }
+}
+
+static void
+PyFT2Image_draw_rect_filled(FT2Image *self,
+                            double_or_long vx0, double_or_long vy0,
+                            double_or_long vx1, double_or_long vy1)
+{
+    auto x0 = _double_to_long("x0", vx0);
+    auto y0 = _double_to_long("y0", vy0);
+    auto x1 = _double_to_long("x1", vx1);
+    auto y1 = _double_to_long("y1", vy1);
+
     self->draw_rect_filled(x0, y0, x1, y1);
 }
 
@@ -1634,7 +1659,14 @@ PYBIND11_MODULE(ft2font, m)
 
     py::class_<FT2Image>(m, "FT2Image", py::is_final(), py::buffer_protocol(),
                          PyFT2Image__doc__)
-        .def(py::init<double, double>(), "width"_a, "height"_a, PyFT2Image_init__doc__)
+        .def(py::init(
+                [](double_or_long width, double_or_long height) {
+                    return new FT2Image(
+                        _double_to_long("width", width),
+                        _double_to_long("height", height)
+                    );
+                }),
+             "width"_a, "height"_a, PyFT2Image_init__doc__)
         .def("draw_rect_filled", &PyFT2Image_draw_rect_filled,
              "x0"_a, "y0"_a, "x1"_a, "y1"_a,
              PyFT2Image_draw_rect_filled__doc__)
