@@ -21,6 +21,17 @@ else
   freetype_dep = freetype_proj.get_variable('freetype_dep')
 endif
 
+if get_option('system-libraqm')
+  libraqm_dep = dependency('raqm', version: '>=0.7.2')
+else
+  LOCAL_LIBRAQM_VERSION = '0.7.2'
+
+  libraqm_proj = subproject(
+    f'libraqm-@LOCAL_LIBRAQM_VERSION@',
+    default_options: ['default_library=static'])
+  libraqm_dep = libraqm_proj.get_variable('libraqm_dep')
+endif
+
 if get_option('system-qhull')
   qhull_dep = dependency('qhull_r', version: '>=8.0.2', required: false)
   if not qhull_dep.found()

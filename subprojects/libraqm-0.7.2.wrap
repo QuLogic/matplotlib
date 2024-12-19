@@ -1,0 +1,7 @@
+[wrap-file]
+source_url = https://github.com/HOST-Oman/libraqm/archive/v0.7.2/libraqm-0.7.2.tar.gz
+source_filename = libraqm-0.7.2.tar.gz
+source_hash = eeccbb0bf23ef77d8ff2be24a9c6c1547cc8e443d3d6b57814d73d44758d95c2
+
+[provide]
+libraqm-0.7.2 = libraqm_dep
