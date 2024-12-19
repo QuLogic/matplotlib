@@ -1,0 +1,5 @@
+[wrap-file]
+directory = harfbuzz-3.0.0
+source_url = https://github.com/harfbuzz/harfbuzz/releases/download/3.0.0/harfbuzz-3.0.0.tar.xz
+source_filename = harfbuzz-3.0.0.tar.xz
+source_hash = 036b0ee118451539783ec7864148bb4106be42a2eb964df4e83e6703ec46f3d9
