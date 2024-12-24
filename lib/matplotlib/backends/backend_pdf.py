@@ -735,6 +735,9 @@ class PdfFile:
         self._hatch_pattern_seq = (Name(f'H{i}') for i in itertools.count(1))
         self.gouraudTriangles = []
 
+        self._groups = {}
+        self._group_seq = (Name(f'G{i}') for i in itertools.count(1))
+
         self._images = {}
         self._image_seq = (Name(f'I{i}') for i in itertools.count(1))
 
@@ -829,16 +832,17 @@ class PdfFile:
         self._write_soft_mask_groups()
         self.writeHatches()
         self.writeGouraudTriangles()
-        xobjects = {
-            name: ob for image, name, ob in self._images.values()}
+        xobjects = {name: ob for image, name, ob in self._images.values()}
         for tup in self.markers.values():
             xobjects[tup[0]] = tup[1]
         for name, value in self.multi_byte_charprocs.items():
             xobjects[name] = value
-        for name, path, trans, ob, join, cap, padding, filled, stroked \
-                in self.paths:
-            xobjects[name] = ob
+        for name, path, trans, obj, join, cap, padding, filled, stroked in self.paths:
+            xobjects[name] = obj
+        for group, name, obj in self._groups.values():
+            xobjects[name] = obj
         self.writeObject(self.XObjectObject, xobjects)
+        self.writeGroups()
         self.writeImages()
         self.writeMarkers()
         self.writePathCollectionTemplates()
@@ -1658,6 +1662,18 @@ end"""
             self.endStream()
         self.writeObject(self.gouraudObject, gouraudDict)
 
+    def groupObject(self, group):
+        """Return name of a group XObject representing the given group."""
+
+        entry = self._groups.get(id(group), None)
+        if entry is not None:
+            return entry[1]
+
+        name = next(self._group_seq)
+        obj = self.reserveObject(f'group {name}')
+        self._groups[id(group)] = (group, name, obj)
+        return name
+
     def imageObject(self, image):
         """Return name of an image XObject representing the given image."""
 
@@ -1784,6 +1800,16 @@ end"""
         else:
             self.currentstream.write(data.tobytes())
         self.endStream()
+
+    def writeGroups(self):
+        print('writeGroups', len(self._groups))
+        for group, name, obj in self._groups.values():
+            self.beginStream(
+                obj.id, None,
+                {'Type': Name('XObject'), 'Subtype': Name('Form'),
+                 'Group': {'S': Name('Transparency'), 'I': True, 'K': True}})
+            self.output(*group)
+            self.endStream()
 
     def writeImages(self):
         for img, name, ob in self._images.values():
@@ -2082,8 +2108,8 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
                 gc, path, transform, padding, filled, stroked)
             path_codes.append(name)
 
-        output = self.file.output
-        output(*self.gc.push())
+        ops = []
+        ops.extend(self.gc.push())
         lastx, lasty = 0, 0
         for xo, yo, path_id, gc0, rgbFace in self._iter_collection(
                 gc, path_codes, offsets, offset_trans,
@@ -2092,10 +2118,12 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
 
             self.check_gc(gc0, rgbFace)
             dx, dy = xo - lastx, yo - lasty
-            output(1, 0, 0, 1, dx, dy, Op.concat_matrix, path_id,
-                   Op.use_xobject)
+            ops.extend([1, 0, 0, 1, dx, dy, Op.concat_matrix, path_id, Op.use_xobject])
             lastx, lasty = xo, yo
-        output(*self.gc.pop())
+        ops.extend(self.gc.pop())
+
+        group_name = self.file.groupObject(ops)
+        self.file.output(group_name, Op.use_xobject)
 
     def draw_markers(self, gc, marker_path, marker_trans, path, trans,
                      rgbFace=None):
