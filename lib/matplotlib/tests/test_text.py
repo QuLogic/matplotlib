@@ -817,18 +817,6 @@ def test_pdf_kerning():
     plt.figtext(0.1, 0.5, "ATATATATATATATATATA", size=30)
 
 
-def test_unsupported_script(recwarn):
-    fig = plt.figure()
-    t = fig.text(.5, .5, "\N{BENGALI DIGIT ZERO}")
-    fig.canvas.draw()
-    assert all(isinstance(warn.message, UserWarning) for warn in recwarn)
-    assert (
-        [warn.message.args for warn in recwarn] ==
-        [(r"Glyph 2534 (\N{BENGALI DIGIT ZERO}) missing from font(s) "
-            + f"{t.get_fontname()}.",),
-         (r"Matplotlib currently does not support Bengali natively.",)])
-
-
 # See gh-26152 for more information on this xfail
 @pytest.mark.xfail(pyparsing_version.release == (3, 1, 0),
                    reason="Error messages are incorrect with pyparsing 3.1.0")
