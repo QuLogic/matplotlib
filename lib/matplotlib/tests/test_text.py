@@ -1202,3 +1202,45 @@ def test_ytick_rotation_mode():
         tick.set_rotation(angle)
 
     plt.subplots_adjust(left=0.4, right=0.6, top=.99, bottom=.01)
+
+
+@pytest.mark.parametrize(
+    'input, match',
+    [
+        ([1, 2, 3], 'must be list of tuple'),
+        ([(1, 2)], 'must be list of tuple'),
+        ([('en', 'foo', 2)], 'start location must be int'),
+        ([('en', 1, 'foo')], 'end location must be int'),
+    ],
+)
+def test_text_language_invalid(input, match):
+    with pytest.raises(TypeError, match=match):
+        Text(0, 0, 'foo', language=input)
+
+
+@image_comparison(baseline_images=['language.png'], remove_text=False, style='mpl20')
+def test_text_language():
+    fig = plt.figure(figsize=(5, 3))
+
+    fig.text(0, 0.8, 'Default', fontsize=32)
+    fig.text(0, 0.55, 'Lang A', fontsize=32)
+    fig.text(0, 0.3, 'Lang B', fontsize=32)
+    fig.text(0, 0.05, 'Mixed', fontsize=32)
+
+    # DejaVu Sans supports language-specific glyphs in the Serbian and Macedonian
+    # languages in the Cyrillic alphabet.
+    cyrillic = '\U00000431'
+    fig.text(0.4, 0.8, cyrillic, fontsize=32)
+    fig.text(0.4, 0.55, cyrillic, fontsize=32, language='sr')
+    fig.text(0.4, 0.3, cyrillic, fontsize=32).set_language('ru')
+    fig.text(0.4, 0.05, cyrillic * 4, fontsize=32,
+             language=[('ru', 0, 1), ('sr', 1, 1), ('ru', 2, 1), ('sr', 3, 1)])
+
+    # Or the Sámi family of languages in the Latin alphabet.
+    latin = '\U0000014a'
+    fig.text(0.7, 0.8, latin, fontsize=32)
+    fig.text(0.7, 0.55, latin, fontsize=32, language='en')
+    fig.text(0.7, 0.3, latin, fontsize=32, language='smn')
+    # Tuples are not documented, but we'll allow it.
+    fig.text(0.7, 0.05, latin * 4, fontsize=32).set_language(
+        (('en', 0, 1), ('smn', 1, 1), ('en', 2, 1), ('smn', 3, 1)))
