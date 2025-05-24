@@ -35,7 +35,7 @@ from matplotlib.backends.backend_mixed import MixedModeRenderer
 from matplotlib.figure import Figure
 from matplotlib.font_manager import get_font, fontManager as _fontManager
 from matplotlib._afm import AFM
-from matplotlib.ft2font import FT2Font, FaceFlags, Kerning, LoadFlags, StyleFlags
+from matplotlib.ft2font import FT2Font, FaceFlags, LoadFlags, StyleFlags
 from matplotlib.transforms import Affine2D, BboxBase
 from matplotlib.path import Path
 from matplotlib.dates import UTC
@@ -2355,7 +2355,6 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
             fonttype = 1
         else:
             font = self._get_font_ttf(prop)
-            self.file._character_tracker.track(font, s)
             fonttype = mpl.rcParams['pdf.fonttype']
 
         if gc.get_url() is not None:
@@ -2367,6 +2366,8 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
         # If fonttype is neither 3 nor 42, emit the whole string at once
         # without manual kerning.
         if fonttype not in [3, 42]:
+            if not mpl.rcParams['pdf.use14corefonts']:
+                self.file._character_tracker.track(font, s)
             self.file.output(Op.begin_text,
                              self.file.fontName(prop), fontsize, Op.selectfont)
             self._setup_textpos(x, y, angle)
@@ -2394,9 +2395,11 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
             prev_was_multibyte = True
             prev_font = font
             for item in _text_helpers.layout(s, font, features=features,
-                                             kern_mode=Kerning.UNFITTED,
                                              language=language):
-                if _font_supports_glyph(fonttype, ord(item.char)):
+                self.file._character_tracker.track_glyph(item.ft_object,
+                                                         item.glyph_index)
+                if (len(item.char) == 1 and
+                        _font_supports_glyph(fonttype, ord(item.char))):
                     if prev_was_multibyte or item.ft_object != prev_font:
                         singlebyte_chunks.append((item.ft_object, item.x, []))
                         prev_font = item.ft_object
@@ -2431,15 +2434,15 @@ class RendererPdf(_backend_pdf_ps.RendererPDFPSBase):
                 prev_start_x = start_x
             self.file.output(Op.end_text)
             # Then emit all the multibyte characters, one at a time.
-            for ft_object, start_x, glyph_idx in multibyte_glyphs:
+            for ft_object, start_x, glyph_index in multibyte_glyphs:
                 self._draw_xobject_glyph(
-                    ft_object, fontsize, glyph_idx, start_x, 0
+                    ft_object, fontsize, glyph_index, start_x, 0
                 )
             self.file.output(Op.grestore)
 
-    def _draw_xobject_glyph(self, font, fontsize, glyph_idx, x, y):
+    def _draw_xobject_glyph(self, font, fontsize, glyph_index, x, y):
         """Draw a multibyte character from a Type 3 font as an XObject."""
-        glyph_name = font.get_glyph_name(glyph_idx)
+        glyph_name = font.get_glyph_name(glyph_index)
         name = self.file._get_xobject_glyph_name(font.fname, glyph_name)
         self.file.output(
             Op.gsave,

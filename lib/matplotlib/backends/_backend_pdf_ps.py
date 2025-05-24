@@ -108,10 +108,9 @@ class CharacterTracker:
 
     def track(self, font, s):
         """Record that string *s* is being typeset using font *font*."""
-        char_to_font = font._get_fontmap(s)
-        for _c, _f in char_to_font.items():
-            glyph_index = _f.get_char_index(ord(_c))
-            self.used.setdefault(_f.fname, set()).add(glyph_index)
+        for raqm_item in font._layout(s, ft2font.LoadFlags.NO_HINTING):
+            font_path = raqm_item.ft_object.fname
+            self.used.setdefault(font_path, set()).add(raqm_item.glyph_index)
 
     def track_glyph(self, font, glyph):
         """Record that glyph index *glyph* is being typeset using font *font*."""
