@@ -184,7 +184,7 @@ class RendererAgg(RendererBase):
                 font.get_char_index(char),
                 # The "y" parameter is upwards (per FreeType).
                 x + dx * c - dy * s, self.height - y + dx * s + dy * c, angle,
-                get_hinting_flag())
+                get_hinting_flag() | LoadFlags.COLOR)
             # draw_text_image's y is downwards & the bitmap bottom side.
             self._renderer.draw_text_image(
                 bitmap["buffer"],
@@ -218,15 +218,28 @@ class RendererAgg(RendererBase):
         if ismath:
             return self.draw_mathtext(gc, x, y, s, prop, angle)
         font = self._prepare_font(prop)
-        font.set_text(s, 0, flags=get_hinting_flag(),
+        font.set_text(s, 0, flags=get_hinting_flag() | LoadFlags.COLOR,
                       features=mtext.get_fontfeatures() if mtext is not None else None,
                       language=mtext.get_language() if mtext is not None else None)
         for bitmap in font._render_glyphs(x, self.height - y):
-            self._renderer.draw_text_image(
-                bitmap["buffer"],
-                bitmap["left"],
-                int(self.height) - bitmap["top"] + bitmap["buffer"].shape[0],
-                0, gc)
+            # glyph_index = font.get_char_index(ord(c))
+            # glyph = font.load_glyph(glyph_index)
+            # bitmap = font._render_glyph(
+            #     glyph_index, x, self.height - y, angle,
+            #     get_hinting_flag() | LoadFlags.COLOR)
+            if bitmap["buffer"].ndim == 3:
+                self._renderer.draw_image(
+                    gc,
+                    bitmap["left"],
+                    bitmap["top"] - bitmap["buffer"].shape[0],
+                    bitmap["buffer"][::-1, :, [2, 1, 0, 3]])
+            else:
+                self._renderer.draw_text_image(
+                    bitmap["buffer"],
+                    bitmap["left"],
+                    int(self.height) - bitmap["top"] + bitmap["buffer"].shape[0],
+                    0, gc)
+            # x += glyph.horiAdvance / 64
 
     def get_text_width_height_descent(self, s, prop, ismath):
         # docstring inherited

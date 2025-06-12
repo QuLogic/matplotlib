@@ -1857,10 +1857,18 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
             py::dict d;
             d["left"] = face->glyph->bitmap_left;
             d["top"] = face->glyph->bitmap_top;
-            d["buffer"] = py::array_t<uint8_t>{
-                {face->glyph->bitmap.rows, face->glyph->bitmap.width},
-                {face->glyph->bitmap.pitch, 1},
-                face->glyph->bitmap.buffer};
+            if (face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+                d["buffer"] = py::array_t<uint8_t>{
+                    py::array::ShapeContainer({face->glyph->bitmap.rows,
+                                               face->glyph->bitmap.width, 4}),
+                    py::array::StridesContainer({face->glyph->bitmap.pitch, 4, 1}),
+                    face->glyph->bitmap.buffer};
+            } else {
+                d["buffer"] = py::array_t<uint8_t>{
+                    {face->glyph->bitmap.rows, face->glyph->bitmap.width},
+                    {face->glyph->bitmap.pitch, 1},
+                    face->glyph->bitmap.buffer};
+            }
             return d;
         })
         .def("_render_glyphs", [](PyFT2Font *self, double x, double y) {
@@ -1872,10 +1880,17 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
                 py::dict d;
                 d["left"] = bg->left;
                 d["top"] = bg->top;
-                d["buffer"] = py::array_t<uint8_t>{
-                    {bg->bitmap.rows, bg->bitmap.width},
-                    {bg->bitmap.pitch, 1},
-                    bg->bitmap.buffer};
+                if (bg->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+                    d["buffer"] = py::array_t<uint8_t>{
+                        py::array::ShapeContainer({bg->bitmap.rows, bg->bitmap.width, 4}),
+                        py::array::StridesContainer({bg->bitmap.pitch, 4, 1}),
+                        bg->bitmap.buffer};
+                } else {
+                    d["buffer"] = py::array_t<uint8_t>{
+                        {bg->bitmap.rows, bg->bitmap.width},
+                        {bg->bitmap.pitch, 1},
+                        bg->bitmap.buffer};
+                }
                 gs.append(d);
             }
             return gs;
