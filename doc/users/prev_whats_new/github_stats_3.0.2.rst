@@ -83,7 +83,7 @@ Pull Requests (224):
 * :ghpull:`12670`: FIX: add setter for hold to un-break basemap
 * :ghpull:`12693`: Workaround Text3D breaking tight_layout()
 * :ghpull:`12727`: Reorder API docs: separate file per module
-* :ghpull:`12738`: Add unobtrusive depreaction note to the first line of the docstring.
+* :ghpull:`12738`: Add unobtrusive deprecation note to the first line of the docstring
 * :ghpull:`12740`: DOC: constrained layout guide (fix: Spacing with colorbars)
 * :ghpull:`11663`: Refactor color parsing of Axes.scatter
 * :ghpull:`12736`: Move deprecation note to end of docstring
