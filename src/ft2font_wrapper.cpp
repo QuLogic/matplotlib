@@ -246,7 +246,7 @@ const char *PyGlyph__doc__ = R"""(
 )""";
 
 static PyGlyph *
-PyGlyph_from_FT2Font(const FT2Font *font)
+PyGlyph_from_FT2Font(const std::shared_ptr<FT2Font> &font)
 {
     if (font == nullptr || font->get_num_glyphs() == 0) {
         throw std::runtime_error("No glyphs have been loaded.");
@@ -406,11 +406,11 @@ const char *PyFT2Font_init__doc__ = R"""(
             This API is private: do not use it directly.
 )""";
 
-static PyFT2Font *
+static std::shared_ptr<PyFT2Font>
 PyFT2Font_init(FT_Library ft2Library, py::object filename,
                std::optional<long> hinting_factor = std::nullopt,
                FT_Long face_index = 0,
-               std::optional<std::vector<PyFT2Font *>> fallback_list = std::nullopt,
+               std::optional<std::vector<std::shared_ptr<PyFT2Font>>> fallback_list = std::nullopt,
                std::optional<int> kerning_factor = std::nullopt,
                bool warn_if_used = false)
 {
@@ -431,14 +431,14 @@ PyFT2Font_init(FT_Library ft2Library, py::object filename,
         throw std::range_error("face_index must be between 0 and 65535, inclusive");
     }
 
-    std::vector<FT2Font *> fallback_fonts;
+    std::vector<std::shared_ptr<FT2Font>> fallback_fonts;
     if (fallback_list) {
         // go through fallbacks to add them to our lists
         std::copy(fallback_list->begin(), fallback_list->end(),
                   std::back_inserter(fallback_fonts));
     }
 
-    auto self = new PyFT2Font(fallback_fonts, warn_if_used);
+    auto self = std::make_shared<PyFT2Font>(fallback_fonts, warn_if_used);
     self->set_kerning_factor(*kerning_factor);
 
     if (fallback_list) {
@@ -456,7 +456,7 @@ PyFT2Font_init(FT_Library ft2Library, py::object filename,
     // file we opened, and nullptr for a caller-owned one.
     auto stream_font_via_python = [&](FT_Stream_CloseFunc close) {
         self->stream.size = 0x7fffffff;  // Unknown size.
-        self->stream.descriptor.pointer = self;
+        self->stream.descriptor.pointer = self.get();
         self->stream.read = &read_from_file_callback;
         self->stream.close = close;
         open_args.flags = FT_OPEN_STREAM;
@@ -524,7 +524,7 @@ PyFT2Font_init(FT_Library ft2Library, py::object filename,
 }
 
 static py::object
-PyFT2Font_fname(PyFT2Font *self)
+PyFT2Font_fname(std::shared_ptr<PyFT2Font> self)
 {
     if (self->from_path) {
         return self->py_file.attr("name");
@@ -655,7 +655,8 @@ const char *PyFT2Font_set_text__doc__ = R"""(
 )""";
 
 static py::array_t<double>
-PyFT2Font_set_text(PyFT2Font *self, std::u32string_view text, double angle = 0.0,
+PyFT2Font_set_text(std::shared_ptr<PyFT2Font> self, std::u32string_view text,
+                   double angle = 0.0,
                    LoadFlags flags = LoadFlags::FORCE_AUTOHINT,
                    std::optional<std::vector<std::string>> features = std::nullopt,
                    std::variant<FT2Font::LanguageType, std::string> languages_or_str = nullptr)
@@ -710,11 +711,11 @@ const char *PyFT2Font_load_char__doc__ = R"""(
 )""";
 
 static PyGlyph *
-PyFT2Font_load_char(PyFT2Font *self, long charcode,
+PyFT2Font_load_char(std::shared_ptr<PyFT2Font> self, long charcode,
                     LoadFlags flags = LoadFlags::FORCE_AUTOHINT)
 {
     bool fallback = true;
-    FT2Font *ft_object = nullptr;
+    std::shared_ptr<FT2Font> ft_object = nullptr;
 
     self->load_char(charcode, static_cast<FT_Int32>(flags), ft_object, fallback);
 
@@ -748,12 +749,12 @@ const char *PyFT2Font_load_glyph__doc__ = R"""(
 )""";
 
 static PyGlyph *
-PyFT2Font_load_glyph(PyFT2Font *self, FT_UInt glyph_index,
+PyFT2Font_load_glyph(std::shared_ptr<PyFT2Font> self, FT_UInt glyph_index,
                      LoadFlags flags = LoadFlags::FORCE_AUTOHINT)
 {
     self->load_glyph(glyph_index, static_cast<FT_Int32>(flags));
 
-    return PyGlyph_from_FT2Font(self);
+    return PyGlyph_from_FT2Font(self->shared_from_this());
 }
 
 const char *PyFT2Font_get_width_height__doc__ = R"""(
@@ -849,7 +850,7 @@ const char *PyFT2Font_draw_glyph_to_bitmap__doc__ = R"""(
 )""";
 
 static void
-PyFT2Font_draw_glyph_to_bitmap(PyFT2Font *self, py::buffer &image,
+PyFT2Font_draw_glyph_to_bitmap(std::shared_ptr<PyFT2Font> self, py::buffer &image,
                                int xd, int yd,
                                PyGlyph *glyph, bool antialiased = true)
 {
@@ -895,7 +896,7 @@ const char *PyFT2Font_get_charmap__doc__ = R"""(
 )""";
 
 static py::dict
-PyFT2Font_get_charmap(PyFT2Font *self)
+PyFT2Font_get_charmap(std::shared_ptr<PyFT2Font> self)
 {
     py::dict charmap;
     FT_UInt index;
@@ -944,7 +945,7 @@ const char *PyFT2Font_get_sfnt__doc__ = R"""(
 )""";
 
 static py::dict
-PyFT2Font_get_sfnt(PyFT2Font *self)
+PyFT2Font_get_sfnt(std::shared_ptr<PyFT2Font> self)
 {
     if (!(self->get_face()->face_flags & FT_FACE_FLAG_SFNT)) {
         throw py::value_error("No SFNT name table");
@@ -1011,7 +1012,7 @@ const char *PyFT2Font_get_ps_font_info__doc__ = R"""(
 )""";
 
 static py::tuple
-PyFT2Font_get_ps_font_info(PyFT2Font *self)
+PyFT2Font_get_ps_font_info(std::shared_ptr<PyFT2Font> self)
 {
     PS_FontInfoRec fontinfo;
 
@@ -1048,7 +1049,7 @@ const char *PyFT2Font_get_sfnt_table__doc__ = R"""(
 )""";
 
 static std::optional<py::dict>
-PyFT2Font_get_sfnt_table(PyFT2Font *self, std::string tagname)
+PyFT2Font_get_sfnt_table(std::shared_ptr<PyFT2Font> self, std::string tagname)
 {
     FT_Sfnt_Tag tag;
     const std::unordered_map<std::string, FT_Sfnt_Tag> names = {
@@ -1267,7 +1268,7 @@ const char *PyFT2Font_get_path__doc__ = R"""(
 )""";
 
 static py::tuple
-PyFT2Font_get_path(PyFT2Font *self)
+PyFT2Font_get_path(std::shared_ptr<PyFT2Font> self)
 {
     std::vector<double> vertices;
     std::vector<unsigned char> codes;
@@ -1310,7 +1311,7 @@ const char *PyFT2Font__get_type1_encoding_vector__doc__ = R"""(
 )""";
 
 static std::array<FT_UInt, 256>
-PyFT2Font__get_type1_encoding_vector(PyFT2Font *self)
+PyFT2Font__get_type1_encoding_vector(std::shared_ptr<PyFT2Font> self)
 {
     auto face = self->get_face();
     auto indices = std::array<FT_UInt, 256>{};
@@ -1332,15 +1333,17 @@ PyFT2Font__get_type1_encoding_vector(PyFT2Font *self)
  * */
 
 struct LayoutItem {
-    PyFT2Font *ft_object;
+    std::shared_ptr<PyFT2Font> ft_object;
     std::u32string character;
     int glyph_index;
     double x;
     double y;
     double prev_kern;
 
-    LayoutItem(PyFT2Font *f, std::u32string c, int i, double x, double y, double k) :
-        ft_object(f), character(c), glyph_index(i), x(x), y(y), prev_kern(k) {}
+    LayoutItem(std::shared_ptr<PyFT2Font> f, std::u32string c, int i,
+               double x, double y, double k) :
+        ft_object(f), character(c), glyph_index(i), x(x), y(y), prev_kern(k) {
+    }
 };
 
 const char *PyFT2Font_layout__doc__ = R"""(
@@ -1373,7 +1376,7 @@ const char *PyFT2Font_layout__doc__ = R"""(
 )""";
 
 static auto
-PyFT2Font_layout(PyFT2Font *self, std::u32string text, LoadFlags flags,
+PyFT2Font_layout(std::shared_ptr<PyFT2Font> self, std::u32string text, LoadFlags flags,
                  std::optional<std::vector<std::string>> features = std::nullopt,
                  std::variant<FT2Font::LanguageType, std::string> languages_or_str = nullptr)
 {
@@ -1404,7 +1407,8 @@ PyFT2Font_layout(PyFT2Font *self, std::u32string text, LoadFlags flags,
     std::optional<double> prev_advance = std::nullopt;
     double prev_x = 0.0;
     for (auto &glyph : glyphs) {
-        auto ft_object = static_cast<PyFT2Font *>(glyph.ftface->generic.data);
+        auto ft_object = std::static_pointer_cast<PyFT2Font>(
+            static_cast<PyFT2Font *>(glyph.ftface->generic.data)->shared_from_this());
 
         ft_object->load_glyph(glyph.index, load_flags);
 
@@ -1608,9 +1612,9 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
                 py::object filename,
                 std::optional<long> hinting_factor = std::nullopt,
                 FT_Long face_index = 0,
-                std::optional<std::vector<PyFT2Font *>> fallback_list = std::nullopt,
+                std::optional<std::vector<std::shared_ptr<PyFT2Font>>> fallback_list = std::nullopt,
                 std::optional<int> kerning_factor = std::nullopt,
-                bool warn_if_used = false) -> PyFT2Font *
+                bool warn_if_used = false) -> std::shared_ptr<PyFT2Font>
             {
                 return PyFT2Font_init(ft2Library, filename, hinting_factor, face_index,
                                       fallback_list, kerning_factor, warn_if_used);
@@ -1675,7 +1679,7 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
              PyFT2Font__get_type1_encoding_vector__doc__)
 
         .def_property_readonly(
-          "postscript_name", [](PyFT2Font *self) {
+          "postscript_name", [](std::shared_ptr<PyFT2Font> self) {
             if (const char *name = FT_Get_Postscript_Name(self->get_face())) {
               return name;
             } else {
@@ -1683,15 +1687,15 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
             }
           }, "PostScript name of the font.")
         .def_property_readonly(
-          "num_faces", [](PyFT2Font *self) {
+          "num_faces", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->num_faces & 0xffff;
           }, "Number of faces in file.")
         .def_property_readonly(
-          "face_index", [](PyFT2Font *self) {
+          "face_index", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->face_index;
           }, "The index of the font in the file.")
         .def_property_readonly(
-          "family_name", [](PyFT2Font *self) {
+          "family_name", [](std::shared_ptr<PyFT2Font> self) {
             if (const char *name = self->get_face()->family_name) {
               return name;
             } else {
@@ -1699,7 +1703,7 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
             }
           }, "Face family name.")
         .def_property_readonly(
-          "style_name", [](PyFT2Font *self) {
+          "style_name", [](std::shared_ptr<PyFT2Font> self) {
             if (const char *name = self->get_face()->style_name) {
               return name;
             } else {
@@ -1707,70 +1711,70 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
             }
           }, "Style name.")
         .def_property_readonly(
-          "face_flags", [](PyFT2Font *self) {
+          "face_flags", [](std::shared_ptr<PyFT2Font> self) {
             return static_cast<FaceFlags>(self->get_face()->face_flags);
           }, "Face flags; see `.FaceFlags`.")
         .def_property_readonly(
-          "style_flags", [](PyFT2Font *self) {
+          "style_flags", [](std::shared_ptr<PyFT2Font> self) {
             return static_cast<StyleFlags>(self->get_face()->style_flags & 0xffff);
           }, "Style flags; see `.StyleFlags`.")
         .def_property_readonly(
-          "num_named_instances", [](PyFT2Font *self) {
+          "num_named_instances", [](std::shared_ptr<PyFT2Font> self) {
             return (self->get_face()->style_flags & 0x7fff0000) >> 16;
           }, "Number of named instances in the face.")
         .def_property_readonly(
-          "num_glyphs", [](PyFT2Font *self) {
+          "num_glyphs", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->num_glyphs;
           }, "Number of glyphs in the face.")
         .def_property_readonly(
-          "num_fixed_sizes", [](PyFT2Font *self) {
+          "num_fixed_sizes", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->num_fixed_sizes;
           }, "Number of bitmap in the face.")
         .def_property_readonly(
-          "num_charmaps", [](PyFT2Font *self) {
+          "num_charmaps", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->num_charmaps;
           }, "Number of charmaps in the face.")
         .def_property_readonly(
-          "scalable", [](PyFT2Font *self) {
+          "scalable", [](std::shared_ptr<PyFT2Font> self) {
             return bool(FT_IS_SCALABLE(self->get_face()));
           }, "Whether face is scalable; attributes after this one "
              "are only defined for scalable faces.")
         .def_property_readonly(
-          "units_per_EM", [](PyFT2Font *self) {
+          "units_per_EM", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->units_per_EM;
           }, "Number of font units covered by the EM.")
         .def_property_readonly(
-          "bbox", [](PyFT2Font *self) {
+          "bbox", [](std::shared_ptr<PyFT2Font> self) {
             FT_BBox bbox = self->get_face()->bbox;
             return py::make_tuple(bbox.xMin, bbox.yMin, bbox.xMax, bbox.yMax);
           }, "Face global bounding box (xmin, ymin, xmax, ymax).")
         .def_property_readonly(
-          "ascender", [](PyFT2Font *self) {
+          "ascender", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->ascender;
           }, "Ascender in 26.6 units.")
         .def_property_readonly(
-          "descender", [](PyFT2Font *self) {
+          "descender", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->descender;
           }, "Descender in 26.6 units.")
         .def_property_readonly(
-          "height", [](PyFT2Font *self) {
+          "height", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->height;
           }, "Height in 26.6 units; used to compute a default line spacing "
              "(baseline-to-baseline distance).")
         .def_property_readonly(
-          "max_advance_width", [](PyFT2Font *self) {
+          "max_advance_width", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->max_advance_width;
           }, "Maximum horizontal cursor advance for all glyphs.")
         .def_property_readonly(
-          "max_advance_height", [](PyFT2Font *self) {
+          "max_advance_height", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->max_advance_height;
           }, "Maximum vertical cursor advance for all glyphs.")
         .def_property_readonly(
-          "underline_position", [](PyFT2Font *self) {
+          "underline_position", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->underline_position;
           }, "Vertical position of the underline bar.")
         .def_property_readonly(
-          "underline_thickness", [](PyFT2Font *self) {
+          "underline_thickness", [](std::shared_ptr<PyFT2Font> self) {
             return self->get_face()->underline_thickness;
           }, "Thickness of the underline bar.")
         .def_property_readonly(
@@ -1782,7 +1786,7 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
         })
 
         .def("_render_glyph",
-            [ft2Library](PyFT2Font *self, FT_UInt idx, LoadFlags flags,
+            [ft2Library](std::shared_ptr<PyFT2Font> self, FT_UInt idx, LoadFlags flags,
                          FT_Render_Mode render_mode)
             {
                 auto face = self->get_face();

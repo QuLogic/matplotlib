@@ -9,6 +9,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -97,13 +98,13 @@ class FT2Image
     FT2Image &operator=(const FT2Image &);
 };
 
-class FT2Font
+class FT2Font : public std::enable_shared_from_this<FT2Font>
 {
   public:
     using LanguageRange = std::tuple<std::string, int, int>;
     using LanguageType = std::optional<std::vector<LanguageRange>>;
 
-    FT2Font(std::vector<FT2Font *> &fallback_list, bool warn_if_used);
+    FT2Font(std::vector<std::shared_ptr<FT2Font>> &fallback_list, bool warn_if_used);
     virtual ~FT2Font();
     void open(FT_Library ft2Library, FT_Open_Args &open_args, FT_Long face_index);
     void close();
@@ -122,11 +123,11 @@ class FT2Font
                   LanguageType languages, std::vector<double> &xys);
     int get_kerning(FT_UInt left, FT_UInt right, FT_Kerning_Mode mode);
     void set_kerning_factor(int factor);
-    void load_char(long charcode, FT_Int32 flags, FT2Font *&ft_object, bool fallback);
-    bool load_char_with_fallback(FT2Font *&ft_object_with_glyph,
+    void load_char(long charcode, FT_Int32 flags, std::shared_ptr<FT2Font> &ft_object, bool fallback);
+    bool load_char_with_fallback(std::shared_ptr<FT2Font> &ft_object_with_glyph,
                                  FT_UInt &final_glyph_index,
                                  std::vector<FT_Glyph> &parent_glyphs,
-                                 std::unordered_map<long, FT2Font *> &parent_char_to_font,
+                                 std::unordered_map<long, std::shared_ptr<FT2Font>> &parent_char_to_font,
                                  long charcode,
                                  FT_Int32 flags,
                                  FT_Error &charcode_error,
@@ -184,8 +185,8 @@ class FT2Font
     FT_Face face;
     FT_Vector pen;    /* untransformed origin  */
     std::vector<FT_Glyph> glyphs;
-    std::vector<FT2Font *> fallbacks;
-    std::unordered_map<long, FT2Font *> char_to_font;
+    std::vector<std::shared_ptr<FT2Font>> fallbacks;
+    std::unordered_map<long, std::shared_ptr<FT2Font>> char_to_font;
     FT_BBox bbox;
     FT_Pos advance;
     int kerning_factor;

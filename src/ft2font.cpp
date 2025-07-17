@@ -180,7 +180,8 @@ FT2Font::get_path(std::vector<double> &vertices, std::vector<unsigned char> &cod
     codes.push_back(CLOSEPOLY);
 }
 
-FT2Font::FT2Font(std::vector<FT2Font *> &fallback_list, bool warn_if_used)
+FT2Font::FT2Font(std::vector<std::shared_ptr<FT2Font>> &fallback_list,
+                 bool warn_if_used)
     : warn_if_used(warn_if_used), image({1, 1}), face(nullptr), fallbacks(fallback_list),
       // set default kerning factor to 0, i.e., no kerning manipulation
       kerning_factor(0)
@@ -512,7 +513,7 @@ void FT2Font::set_text(
     }
 }
 
-void FT2Font::load_char(long charcode, FT_Int32 flags, FT2Font *&ft_object, bool fallback = false)
+void FT2Font::load_char(long charcode, FT_Int32 flags, std::shared_ptr<FT2Font> &ft_object, bool fallback = false)
 {
     // if this is parent FT2Font, cache will be filled in 2 ways:
     // 1. set_text was previously called
@@ -521,12 +522,12 @@ void FT2Font::load_char(long charcode, FT_Int32 flags, FT2Font *&ft_object, bool
     if (fallback && char_to_font.find(charcode) != char_to_font.end()) {
         ft_object = char_to_font[charcode];
         // since it will be assigned to ft_object anyway
-        FT2Font *throwaway = nullptr;
+        std::shared_ptr<FT2Font> throwaway = nullptr;
         ft_object->load_char(charcode, flags, throwaway, false);
     } else if (fallback) {
         FT_UInt final_glyph_index;
         FT_Error charcode_error = FT_Err_Ok, glyph_error = FT_Err_Ok;
-        FT2Font *ft_object_with_glyph = this;
+        std::shared_ptr<FT2Font> ft_object_with_glyph = shared_from_this();
         bool was_found = load_char_with_fallback(ft_object_with_glyph, final_glyph_index,
                                                  glyphs, char_to_font,
                                                  charcode, flags, charcode_error, glyph_error,
@@ -549,7 +550,7 @@ void FT2Font::load_char(long charcode, FT_Int32 flags, FT2Font *&ft_object, bool
         ft_object = ft_object_with_glyph;
     } else {
         //no fallback case
-        ft_object = this;
+        ft_object = shared_from_this();
         FT_UInt glyph_index = FT_Get_Char_Index(face, (FT_ULong) charcode);
         if (!glyph_index){
             glyph_seen_fonts.insert((face != nullptr)?face->family_name: nullptr);
@@ -587,10 +588,10 @@ bool FT2Font::get_char_fallback_index(FT_ULong charcode, int& index) const
 }
 
 
-bool FT2Font::load_char_with_fallback(FT2Font *&ft_object_with_glyph,
+bool FT2Font::load_char_with_fallback(std::shared_ptr<FT2Font> &ft_object_with_glyph,
                                       FT_UInt &final_glyph_index,
                                       std::vector<FT_Glyph> &parent_glyphs,
-                                      std::unordered_map<long, FT2Font *> &parent_char_to_font,
+                                      std::unordered_map<long, std::shared_ptr<FT2Font>> &parent_char_to_font,
                                       long charcode,
                                       FT_Int32 flags,
                                       FT_Error &charcode_error,
@@ -620,8 +621,8 @@ bool FT2Font::load_char_with_fallback(FT2Font *&ft_object_with_glyph,
         // cache the result for future
         // need to store this for anytime a character is loaded from a parent
         // FT2Font object or to generate a mapping of individual characters to fonts
-        ft_object_with_glyph = this;
-        parent_char_to_font[charcode] = this;
+        ft_object_with_glyph = shared_from_this();
+        parent_char_to_font[charcode] = ft_object_with_glyph;
         parent_glyphs.push_back(thisGlyph);
         return true;
     }
@@ -649,7 +650,7 @@ void FT2Font::load_glyph(FT_UInt glyph_index, FT_Int32 flags)
 
 FT_UInt FT2Font::get_char_index(FT_ULong charcode, bool fallback = false)
 {
-    FT2Font *ft_object = nullptr;
+    std::shared_ptr<FT2Font> ft_object = nullptr;
     if (fallback && char_to_font.find(charcode) != char_to_font.end()) {
         // fallback denotes whether we want to search fallback list.
         // should call set_text/load_char_with_fallback to parent FT2Font before
@@ -657,7 +658,7 @@ FT_UInt FT2Font::get_char_index(FT_ULong charcode, bool fallback = false)
         ft_object = char_to_font[charcode];
     } else {
         // set as self
-        ft_object = this;
+        ft_object = shared_from_this();
     }
 
     return FT_Get_Char_Index(ft_object->get_face(), charcode);
