@@ -784,8 +784,8 @@ private:
     Triangulation& _triangulation;
 
     // Variables internal to C++ only.
-    Point* _points;    // Array of all points in triangulation plus corners of
-                       // enclosing rectangle.  Owned.
+    std::vector<Point> _points;  // Array of all points in triangulation plus corners of
+                                 // enclosing rectangle.  Owned.
 
     typedef std::vector<Edge> Edges;
     Edges _edges;   // All Edges in triangulation plus bottom and top Edges of

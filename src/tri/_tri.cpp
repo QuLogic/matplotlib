@@ -1064,7 +1064,6 @@ XY TriContourGenerator::interp(int point1,
 
 TrapezoidMapTriFinder::TrapezoidMapTriFinder(Triangulation& triangulation)
     : _triangulation(triangulation),
-      _points(nullptr),
       _tree(nullptr)
 {}
 
@@ -1291,8 +1290,7 @@ TrapezoidMapTriFinder::add_edge_to_tree(const Edge& edge)
 void
 TrapezoidMapTriFinder::clear()
 {
-    delete [] _points;
-    _points = nullptr;
+    _points.clear();
 
     _edges.clear();
 
@@ -1399,7 +1397,7 @@ TrapezoidMapTriFinder::initialize()
     // Set up points array, which contains all of the points in the
     // triangulation plus the 4 corners of the enclosing rectangle.
     int npoints = triang.get_npoints();
-    _points = new Point[npoints + 4];
+    _points.reserve(npoints + 4);
     BoundingBox bbox;
     for (int i = 0; i < npoints; ++i) {
         XY xy = triang.get_point_coords(i);
@@ -1408,7 +1406,7 @@ TrapezoidMapTriFinder::initialize()
             xy.x = 0.0;
         if (xy.y == -0.0)
             xy.y = 0.0;
-        _points[i] = Point(xy);
+        _points.emplace_back(xy);
         bbox.add(xy);
     }
 
@@ -1423,10 +1421,10 @@ TrapezoidMapTriFinder::initialize()
         const double small = 0.1;  // Any value > 0.0
         bbox.expand( (bbox.upper - bbox.lower)*small );
     }
-    _points[npoints  ] = Point(bbox.lower);                  // SW point.
-    _points[npoints+1] = Point(bbox.upper.x, bbox.lower.y);  // SE point.
-    _points[npoints+2] = Point(bbox.lower.x, bbox.upper.y);  // NW point.
-    _points[npoints+3] = Point(bbox.upper);                  // NE point.
+    _points.emplace_back(bbox.lower);                  // SW point.
+    _points.emplace_back(bbox.upper.x, bbox.lower.y);  // SE point.
+    _points.emplace_back(bbox.lower.x, bbox.upper.y);  // NW point.
+    _points.emplace_back(bbox.upper);                  // NE point.
 
     // Set up edges array.
     // First the bottom and top edges of the enclosing rectangle.
@@ -1442,16 +1440,14 @@ TrapezoidMapTriFinder::initialize()
     for (int tri = 0; tri < ntri; ++tri) {
         if (!triang.is_masked(tri)) {
             for (int edge = 0; edge < 3; ++edge) {
-                Point* start = _points + triang.get_triangle_point(tri,edge);
-                Point* end   = _points +
-                               triang.get_triangle_point(tri,(edge+1)%3);
-                Point* other = _points +
-                               triang.get_triangle_point(tri,(edge+2)%3);
+                Point* start = &_points[triang.get_triangle_point(tri, edge)];
+                Point* end   = &_points[triang.get_triangle_point(tri,(edge+1)%3)];
+                Point* other = &_points[triang.get_triangle_point(tri,(edge+2)%3)];
                 TriEdge neighbor = triang.get_neighbor_edge(tri,edge);
                 if (end->is_right_of(*start)) {
                     const Point* neighbor_point_below = (neighbor.tri == -1) ?
-                        nullptr : _points + triang.get_triangle_point(
-                                          neighbor.tri, (neighbor.edge+2)%3);
+                        nullptr :
+                        &_points[triang.get_triangle_point(neighbor.tri, (neighbor.edge+2)%3)];
                     _edges.emplace_back(start, end, neighbor.tri, tri,
                                         neighbor_point_below, other);
                 }
