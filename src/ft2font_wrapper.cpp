@@ -420,7 +420,7 @@ ft_glyph_warn(FT_ULong charcode, std::set<FT_String*> family_names)
 const char *PyFT2Font_init__doc__ = R"""(
     Parameters
     ----------
-    filename : str or file-like
+    filename : str, bytes, os.PathLike, or io.BinaryIO
         The source of the font data in a format (ttf or ttc) that FreeType can read.
 
     hinting_factor : int, optional
@@ -481,7 +481,10 @@ PyFT2Font_init(py::object filename, long hinting_factor = 8,
         }
     }
 
-    if (py::isinstance<py::bytes>(filename) || py::isinstance<py::str>(filename)) {
+    auto PathLike = py::module_::import("os").attr("PathLike");
+    if (py::isinstance<py::bytes>(filename) || py::isinstance<py::str>(filename) ||
+        py::isinstance(filename, PathLike))
+    {
         self->py_file = py::module_::import("io").attr("open")(filename, "rb");
         self->stream.close = &close_file_callback;
     } else {
@@ -507,13 +510,13 @@ PyFT2Font_init(py::object filename, long hinting_factor = 8,
     return self;
 }
 
-static py::str
+static py::object
 PyFT2Font_fname(PyFT2Font *self)
 {
-    if (self->stream.close) {  // Called passed a filename to the constructor.
+    if (self->stream.close) {  // User passed a filename to the constructor.
         return self->py_file.attr("name");
     } else {
-        return py::cast<py::str>(self->py_file);
+        return self->py_file;
     }
 }
 
