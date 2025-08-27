@@ -113,6 +113,10 @@ class FT2Font
     void set_size(double ptsize, double dpi);
     void set_charmap(int i);
     void select_charmap(unsigned long i);
+    std::vector<raqm_glyph_t> layout(std::u32string_view text, FT_Int32 flags,
+                                     std::optional<std::vector<std::string>> features,
+                                     LanguageType languages,
+                                     std::set<FT_String*>& glyph_seen_fonts);
     void set_text(std::u32string_view codepoints, double angle, FT_Int32 flags,
                   std::optional<std::vector<std::string>> features,
                   LanguageType languages, std::vector<double> &xys);
