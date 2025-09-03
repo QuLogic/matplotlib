@@ -1069,18 +1069,19 @@ class FigureCanvasPS(FigureCanvasBase):
             print("mpldict begin", file=fh)
             print("\n".join(_psDefs), file=fh)
             if not mpl.rcParams['ps.useafm']:
-                for font_path, glyphs in ps_renderer._character_tracker.used.items():
-                    if not glyphs:
+                for (font, subset_index), charmap in \
+                        ps_renderer._character_tracker.used.items():
+                    if not charmap:
                         continue
                     fonttype = mpl.rcParams['ps.fonttype']
                     # Can't use more than 255 chars from a single Type 3 font.
-                    if len(glyphs) > 255:
+                    if len(charmap) > 255:
                         fonttype = 42
                     fh.flush()
                     if fonttype == 3:
-                        fh.write(_font_to_ps_type3(font_path, glyphs))
+                        fh.write(_font_to_ps_type3(font, charmap.values()))
                     else:  # Type 42 only.
-                        _font_to_ps_type42(font_path, glyphs, fh)
+                        _font_to_ps_type42(font, charmap.values(), fh)
             print("end", file=fh)
             print("%%EndProlog", file=fh)
 
