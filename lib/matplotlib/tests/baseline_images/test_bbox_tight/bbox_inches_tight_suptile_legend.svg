@@ -6,11 +6,11 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2025-07-11T20:15:13.735586</dc:date>
+    <dc:date>2025-07-31T18:34:15.371435</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
-      <dc:title>Matplotlib v3.11.0.dev1079+g4976fb64ae, https://matplotlib.org/</dc:title>
+      <dc:title>Matplotlib v3.11.0.dev1125+g0f2f8fd987.d20250731, https://matplotlib.org/</dc:title>
      </cc:Agent>
     </dc:creator>
    </cc:Work>
@@ -1183,7 +1183,7 @@ z
   </g>
   <g id="text_24">
    <!-- Figure title -->
-   <g transform="translate(279.629687 16.318125) scale(0.12 -0.12)">
+   <g transform="translate(279.65875 16.318125) scale(0.12 -0.12)">
     <defs>
      <path id="DejaVuSans-46" d="M 628 4666 
 L 3309 4666 
