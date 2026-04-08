@@ -24,7 +24,7 @@ environment:
   global:
     PYTHONFAULTHANDLER: 1
     PYTHONIOENCODING: UTF-8
-    PYTEST_ARGS: -rfEsXR --numprocesses=auto --timeout=300 --durations=25
+    PYTEST_ARGS: -rfEsXR --numprocesses=2 --timeout=300 --durations=25
                  --cov-report= --cov=lib --log-level=DEBUG
 
   matrix:
@@ -63,7 +63,7 @@ install:
 test_script:
   # Now build the thing..
   - set LINK=/LIBPATH:%cd%\lib
-  - pip install -v --no-build-isolation --editable .
+  - pip install -v --no-build-isolation -Ccompile-args=-j2 --editable .
   # this should show no freetype dll...
   - set "DUMPBIN=%VS140COMNTOOLS%\..\..\VC\bin\dumpbin.exe"
   - '"%DUMPBIN%" /DEPENDENTS lib\matplotlib\ft2font*.pyd | findstr freetype.*.dll && exit /b 1 || exit /b 0'
