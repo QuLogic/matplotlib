@@ -203,9 +203,9 @@ class RendererAgg(RendererBase):
             rgba = rgba[:3] + (gc.get_alpha(),)
         gc1 = self.new_gc()
         gc1.set_linewidth(0)
-        gc1.set_snap(gc.get_snap())
+        gc1.set_snap(True if gc.get_snap() is True else False)  # None aka auto -> off.
         for dx, dy, w, h in boxes:  # dy is upwards.
-            if gc1.get_snap() in [None, True]:
+            if gc1.get_snap():
                 # Prevent thin bars from disappearing by growing symmetrically.
                 if w < 1:
                     dx -= (1 - w) / 2
