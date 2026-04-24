@@ -1162,16 +1162,18 @@ class LinearSegmentedColormap(Colormap):
         self._gamma = gamma
 
     def _init(self):
-        self._lut = np.ones((self.N + 3, 4), float)
-        self._lut[:-3, 0] = _create_lookup_table(
+        # Assemble the LUT first in a local variable in case of parallel threads
+        lut = np.ones((self.N + 3, 4), float)
+        lut[:-3, 0] = _create_lookup_table(
             self.N, self._segmentdata['red'], self._gamma)
-        self._lut[:-3, 1] = _create_lookup_table(
+        lut[:-3, 1] = _create_lookup_table(
             self.N, self._segmentdata['green'], self._gamma)
-        self._lut[:-3, 2] = _create_lookup_table(
+        lut[:-3, 2] = _create_lookup_table(
             self.N, self._segmentdata['blue'], self._gamma)
         if 'alpha' in self._segmentdata:
-            self._lut[:-3, 3] = _create_lookup_table(
+            lut[:-3, 3] = _create_lookup_table(
                 self.N, self._segmentdata['alpha'], 1)
+        self._lut = lut
         self._isinit = True
         self._update_lut_extremes()
 
@@ -1362,8 +1364,10 @@ class ListedColormap(Colormap):
         super().__init__(name, N, bad=bad, under=under, over=over)
 
     def _init(self):
-        self._lut = np.zeros((self.N + 3, 4), float)
-        self._lut[:-3] = to_rgba_array(self.colors)
+        # Assemble the LUT first in a local variable in case of parallel threads
+        lut = np.zeros((self.N + 3, 4), float)
+        lut[:-3] = to_rgba_array(self.colors)
+        self._lut = lut
         self._isinit = True
         self._update_lut_extremes()
 
