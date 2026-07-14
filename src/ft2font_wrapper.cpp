@@ -245,7 +245,7 @@ const char *PyGlyph__doc__ = R"""(
     <https://freetype.org/freetype2/docs/glyphs/glyphs-3.html>`_.
 )""";
 
-static PyGlyph *
+static std::unique_ptr<PyGlyph>
 PyGlyph_from_FT2Font(const std::shared_ptr<FT2Font> &font)
 {
     if (font == nullptr || font->get_num_glyphs() == 0) {
@@ -255,7 +255,7 @@ PyGlyph_from_FT2Font(const std::shared_ptr<FT2Font> &font)
     const FT_Face &face = font->get_face();
     const FT_Glyph &glyph = font->get_last_glyph();
 
-    PyGlyph *self = new PyGlyph();
+    auto self = std::make_unique<PyGlyph>();
 
     self->glyphInd = font->get_last_glyph_index();
     FT_Glyph_Get_CBox(glyph, ft_glyph_bbox_subpixels, &self->bbox);
@@ -710,7 +710,7 @@ const char *PyFT2Font_load_char__doc__ = R"""(
     .set_charmap
 )""";
 
-static PyGlyph *
+static std::unique_ptr<PyGlyph>
 PyFT2Font_load_char(std::shared_ptr<PyFT2Font> self, long charcode,
                     LoadFlags flags = LoadFlags::FORCE_AUTOHINT)
 {
@@ -748,7 +748,7 @@ const char *PyFT2Font_load_glyph__doc__ = R"""(
     .load_char
 )""";
 
-static PyGlyph *
+static std::unique_ptr<PyGlyph>
 PyFT2Font_load_glyph(std::shared_ptr<PyFT2Font> self, FT_UInt glyph_index,
                      LoadFlags flags = LoadFlags::FORCE_AUTOHINT)
 {
@@ -1532,7 +1532,7 @@ PYBIND11_MODULE(ft2font, m, py::mod_gil_not_used())
                         py::module_::import("matplotlib._api").attr("warn_deprecated");
                     warn("since"_a="3.11", "name"_a="FT2Image", "obj_type"_a="class",
                          "alternative"_a="a 2D uint8 ndarray");
-                    return new FT2Image(width, height);
+                    return std::make_unique<FT2Image>(width, height);
                 }),
              "width"_a, "height"_a, PyFT2Image_init__doc__)
         .def("draw_rect_filled", &FT2Image::draw_rect_filled,
